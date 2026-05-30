@@ -1,0 +1,40 @@
+# OS Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE & Editor Files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Node (if using npm/build tools)
+node_modules/
+package-lock.json
+npm-debug.log
+yarn-error.log
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Build/Dist Output
+dist/
+build/
+*.min.js
+*.min.css
+
+# Logs
+*.log
+
+# Temporary Files
+.cache/
+temp/
+tmp/
+
+# System
+.gitkeep
