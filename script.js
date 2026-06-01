@@ -123,3 +123,32 @@ animatedElements.forEach((element) => {
   element.style.animationPlayState = "paused";
   observer.observe(element);
 });
+
+// Lightbox for gallery images
+const lightbox = document.getElementById("lightbox");
+const lightboxImg = document.getElementById("lightboxImg");
+const lightboxClose = document.getElementById("lightboxClose");
+
+document.querySelectorAll(".lightbox-trigger").forEach((img) => {
+  img.style.cursor = "zoom-in";
+  img.addEventListener("click", (e) => {
+    e.stopPropagation();
+    lightboxImg.src = img.src;
+    lightboxImg.alt = img.alt;
+    lightbox.style.display = "flex";
+    document.body.style.overflow = "hidden";
+  });
+});
+
+const closeLightbox = () => {
+  lightbox.style.display = "none";
+  document.body.style.overflow = "";
+};
+
+lightboxClose.addEventListener("click", closeLightbox);
+lightbox.addEventListener("click", closeLightbox);
+lightboxImg.addEventListener("click", (e) => e.stopPropagation());
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeLightbox();
+});
