@@ -248,7 +248,7 @@ fetch("posts/index.json")
           <div class="post-card-date"><i class="fas fa-calendar-alt" style="margin-right:5px;opacity:0.6;"></i>${meta.date || ""}</div>
         </div>
       `;
-      card.addEventListener("click", () => openPost(slug, meta, imgSrc));
+      card.addEventListener("click", () => window.location.href = `post.html?slug=${encodeURIComponent(slug)}`);
       postsGrid.appendChild(card);
     }
   })

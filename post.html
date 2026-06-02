@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Post — Astroserves</title>
+  <meta name="description" content="Astroserves by Acharya Anuj" />
+  <!-- OG tags for Facebook/Instagram sharing — filled dynamically -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Astroserves by Acharya Anuj" />
+  <meta id="ogTitle"       property="og:title"       content="Astroserves Post" />
+  <meta id="ogDescription" property="og:description" content="Acharya Anuj ke vichar" />
+  <meta id="ogImage"       property="og:image"       content="https://www.astroserves.com/images/acharya-anuj.jpg" />
+  <meta id="ogUrl"         property="og:url"         content="https://www.astroserves.com/post.html" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.4/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #090208;
+      --text: #f7f1e7;
+      --muted: #d7c3a3;
+      --gold: #f3c85d;
+      --saffron: #d9812b;
+      --card: rgba(255,247,229,0.06);
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      background: rgba(9,2,8,0.95);
+      border-bottom: 1px solid rgba(243,200,93,0.15);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--gold);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    .back-btn:hover { color: var(--gold); }
+
+    /* ── Hero Image ── */
+    .post-hero {
+      width: 100%;
+      max-height: 420px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .post-hero-placeholder {
+      width: 100%;
+      height: 220px;
+      background: linear-gradient(135deg, rgba(243,200,93,0.08), rgba(217,129,43,0.08));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+    }
+
+    /* ── Article ── */
+    .article-wrap {
+      max-width: 740px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    .post-category {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--saffron);
+      margin-bottom: 12px;
+    }
+
+    .post-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      font-weight: 700;
+      color: var(--gold);
+      line-height: 1.25;
+      margin-bottom: 14px;
+    }
+
+    .post-meta {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 36px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid rgba(243,200,93,0.12);
+      padding-bottom: 20px;
+    }
+
+    .post-meta i { margin-right: 5px; opacity: 0.7; }
+
+    .post-body {
+      font-size: 1.05rem;
+      line-height: 1.95;
+      color: var(--muted);
+      white-space: pre-wrap;
+    }
+
+    /* ── Share Section ── */
+    .share-section {
+      margin-top: 48px;
+      padding-top: 28px;
+      border-top: 1px solid rgba(243,200,93,0.12);
+    }
+
+    .share-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .share-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .share-btn:hover { opacity: 0.85; transform: translateY(-2px); }
+
+    .share-fb   { background: #1877f2; color: #fff; }
+    .share-wa   { background: #25d366; color: #fff; }
+    .share-copy { background: var(--card); color: var(--text); border: 1px solid rgba(243,200,93,0.2); }
+
+    /* ── CTA ── */
+    .cta-box {
+      margin-top: 48px;
+      background: linear-gradient(135deg, rgba(243,200,93,0.08), rgba(217,129,43,0.08));
+      border: 1px solid rgba(243,200,93,0.2);
+      border-radius: 16px;
+      padding: 28px 24px;
+      text-align: center;
+    }
+
+    .cta-box h3 { color: var(--gold); font-size: 1.2rem; margin-bottom: 8px; }
+    .cta-box p  { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; }
+
+    .cta-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    .btn-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .btn-cta:hover { opacity: 0.88; }
+    .btn-gold  { background: linear-gradient(135deg, #f3c85d, #d9812b); color: #1a0a2e; }
+    .btn-green { background: #25d366; color: #fff; }
+
+    /* ── Loading / Error ── */
+    .state-box {
+      min-height: 60vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(243,200,93,0.2);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Footer ── */
+    .mini-footer {
+      text-align: center;
+      padding: 24px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      border-top: 1px solid rgba(243,200,93,0.08);
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="/" class="brand"><span>ॐ</span> Astroserves</a>
+  <a href="/#posts" class="back-btn"><i class="fas fa-arrow-left"></i> Sabhi Posts</a>
+</header>
+
+<div id="postContent"></div>
+
+<footer class="mini-footer">
+  © Astroserves by Acharya Anuj &nbsp;|&nbsp; Delhi, India
+</footer>
+
+<script>
+  const slug = new URLSearchParams(window.location.search).get("slug");
+
+  const container = document.getElementById("postContent");
+
+  if (!slug) {
+    container.innerHTML = `<div class="state-box"><i class="fas fa-exclamation-circle" style="font-size:2rem;color:#f3c85d;"></i><p>Koi post nahi mila. <a href="/#posts" style="color:#f3c85d;">Wapas jao</a></p></div>`;
+  } else {
+    // Show loader
+    container.innerHTML = `<div class="state-box"><div class="spinner"></div><p>Post load ho rahi hai...</p></div>`;
+
+    const tryImage = (slug) => new Promise((resolve) => {
+      const exts = ["jpg", "jpeg", "png", "webp"];
+      let i = 0;
+      const tryNext = () => {
+        if (i >= exts.length) { resolve(null); return; }
+        const img = new Image();
+        img.src = `images/posts/${slug}.${exts[i]}`;
+        img.onload = () => resolve(img.src);
+        img.onerror = () => { i++; tryNext(); };
+      };
+      tryNext();
+    });
+
+    Promise.all([
+      fetch(`posts/${slug}.txt`).then(r => { if (!r.ok) throw new Error("Post nahi mila"); return r.text(); }),
+      tryImage(slug)
+    ]).then(([txt, imgSrc]) => {
+      // Parse txt
+      const lines = txt.split("\n");
+      const meta  = {};
+      let bodyStart = 0;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line === "---") { bodyStart = i + 1; break; }
+        const ci = line.indexOf(":");
+        if (ci !== -1) {
+          meta[line.slice(0, ci).trim().toLowerCase()] = line.slice(ci + 1).trim();
+          bodyStart = i + 1;
+        }
+      }
+      const body = lines.slice(bodyStart).join("\n").trim();
+
+      const title    = meta.title    || slug;
+      const date     = meta.date     || "";
+      const category = meta.category || "";
+      const pageUrl  = encodeURIComponent(window.location.href);
+      const pageTitle = encodeURIComponent(title);
+
+      // Update page title & OG tags
+      document.title = `${title} — Astroserves`;
+      document.getElementById("ogTitle").content       = title;
+      document.getElementById("ogDescription").content = body.slice(0, 160);
+      document.getElementById("ogUrl").content         = window.location.href;
+      if (imgSrc) {
+        document.getElementById("ogImage").content = `https://www.astroserves.com/${imgSrc}`;
+      }
+
+      container.innerHTML = `
+        ${imgSrc
+          ? `<img class="post-hero" src="${imgSrc}" alt="${title}" />`
+          : `<div class="post-hero-placeholder">🔱</div>`}
+
+        <div class="article-wrap">
+          ${category ? `<div class="post-category">${category}</div>` : ""}
+          <h1 class="post-title">${title}</h1>
+          <div class="post-meta">
+            ${date ? `<span><i class="fas fa-calendar-alt"></i>${date}</span>` : ""}
+            <span><i class="fas fa-user"></i>Acharya Anuj</span>
+            <span><i class="fas fa-tag"></i>${category || "Post"}</span>
+          </div>
+
+          <div class="post-body">${body}</div>
+
+          <!-- Share -->
+          <div class="share-section">
+            <div class="share-title">📢 Share Karein</div>
+            <div class="share-buttons">
+              <a class="share-btn share-fb"
+                 href="https://www.facebook.com/sharer/sharer.php?u=${pageUrl}"
+                 target="_blank" rel="noreferrer">
+                <i class="fab fa-facebook-f"></i> Facebook
+              </a>
+              <a class="share-btn share-wa"
+                 href="https://wa.me/?text=${pageTitle}%20${pageUrl}"
+                 target="_blank" rel="noreferrer">
+                <i class="fab fa-whatsapp"></i> WhatsApp
+              </a>
+              <button class="share-btn share-copy" onclick="copyLink()">
+                <i class="fas fa-link"></i> Link Copy Karo
+              </button>
+            </div>
+          </div>
+
+          <!-- CTA -->
+          <div class="cta-box">
+            <h3>🔱 Consultation Chahiye?</h3>
+            <p>Acharya Anuj se seedha baat karein — Astrology, Vastu, Janampatri ke liye</p>
+            <div class="cta-buttons">
+              <a href="tel:+918218433649" class="btn-cta btn-gold"><i class="fas fa-phone-alt"></i> Call Now</a>
+              <a href="https://wa.me/918218433649" class="btn-cta btn-green" target="_blank" rel="noreferrer"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+            </div>
+          </div>
+        </div>
+      `;
+    }).catch(err => {
+      container.innerHTML = `<div class="state-box"><i class="fas fa-exclamation-circle" style="font-size:2rem;color:#f3c85d;"></i><p>${err.message}. <a href="/#posts" style="color:#f3c85d;">Wapas jao</a></p></div>`;
+    });
+  }
+
+  function copyLink() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      const btn = document.querySelector(".share-copy");
+      btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+      setTimeout(() => btn.innerHTML = '<i class="fas fa-link"></i> Link Copy Karo', 2000);
+    });
+  }
+</script>
+</body>
+</html>
