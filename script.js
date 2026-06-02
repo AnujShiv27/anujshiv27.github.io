@@ -150,5 +150,108 @@ lightbox.addEventListener("click", closeLightbox);
 lightboxImg.addEventListener("click", (e) => e.stopPropagation());
 
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeLightbox();
+  if (e.key === "Escape") {
+    closeLightbox();
+    closePostModal();
+  }
 });
+
+// ── Posts System ──
+const postsGrid = document.getElementById("postsGrid");
+const postModal = document.getElementById("postModal");
+const postModalClose = document.getElementById("postModalClose");
+
+const parseTxt = (text) => {
+  const lines = text.split("\n");
+  const meta = {};
+  let bodyStart = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line === "---") { bodyStart = i + 1; break; }
+    const colonIdx = line.indexOf(":");
+    if (colonIdx !== -1) {
+      const key = line.slice(0, colonIdx).trim().toLowerCase();
+      const val = line.slice(colonIdx + 1).trim();
+      meta[key] = val;
+      bodyStart = i + 1;
+    }
+  }
+  meta.body = lines.slice(bodyStart).join("\n").trim();
+  return meta;
+};
+
+const closePostModal = () => {
+  postModal.style.display = "none";
+  document.body.style.overflow = "";
+};
+
+postModalClose.addEventListener("click", closePostModal);
+postModal.addEventListener("click", (e) => {
+  if (e.target === postModal) closePostModal();
+});
+
+const openPost = (slug, meta, imgSrc) => {
+  document.getElementById("postModalTitle").textContent = meta.title || slug;
+  document.getElementById("postModalDate").textContent = meta.date || "";
+  document.getElementById("postModalCategory").textContent = meta.category || "";
+  document.getElementById("postModalBody").textContent = meta.body || "";
+  const modalImg = document.getElementById("postModalImg");
+  if (imgSrc) {
+    modalImg.src = imgSrc;
+    modalImg.style.display = "block";
+  } else {
+    modalImg.style.display = "none";
+  }
+  postModal.style.display = "flex";
+  document.body.style.overflow = "hidden";
+};
+
+const tryImage = (slug) => {
+  const exts = ["jpg", "jpeg", "png", "webp"];
+  return new Promise((resolve) => {
+    let i = 0;
+    const tryNext = () => {
+      if (i >= exts.length) { resolve(null); return; }
+      const img = new Image();
+      img.src = `images/posts/${slug}.${exts[i]}`;
+      img.onload = () => resolve(img.src);
+      img.onerror = () => { i++; tryNext(); };
+    };
+    tryNext();
+  });
+};
+
+fetch("posts/index.json")
+  .then((r) => r.json())
+  .then(async (slugs) => {
+    postsGrid.innerHTML = "";
+    if (!slugs.length) {
+      postsGrid.innerHTML = "<p style='text-align:center;opacity:0.6;'>Abhi koi post nahi hai.</p>";
+      return;
+    }
+    for (const slug of slugs) {
+      const [txtRes, imgSrc] = await Promise.all([
+        fetch(`posts/${slug}.txt`).then((r) => r.text()),
+        tryImage(slug),
+      ]);
+      const meta = parseTxt(txtRes);
+      const card = document.createElement("div");
+      card.className = "post-card";
+      card.innerHTML = `
+        ${imgSrc
+          ? `<img class="post-card-img" src="${imgSrc}" alt="${meta.title || slug}" />`
+          : `<div class="post-card-img-placeholder"><i class="fas fa-feather-alt"></i></div>`}
+        <div class="post-card-body">
+          <span class="post-card-category">${meta.category || "Post"}</span>
+          <div class="post-card-title">${meta.title || slug}</div>
+          <div class="post-card-excerpt">${meta.body || ""}</div>
+          <div class="post-card-date"><i class="fas fa-calendar-alt" style="margin-right:5px;opacity:0.6;"></i>${meta.date || ""}</div>
+        </div>
+      `;
+      card.addEventListener("click", () => openPost(slug, meta, imgSrc));
+      postsGrid.appendChild(card);
+    }
+  })
+  .catch(() => {
+    postsGrid.innerHTML = "<p style='text-align:center;opacity:0.6;'>Posts load nahi ho sake.</p>";
+  });
