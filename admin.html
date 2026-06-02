@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — Astroserves</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: #0f0a1a;
+      color: #f0e9d6;
+      min-height: 100vh;
+    }
+
+    /* ── Login Screen ── */
+    #loginScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f0a1a 0%, #1a0a2e 100%);
+    }
+
+    .login-box {
+      background: rgba(255,247,229,0.06);
+      border: 1px solid rgba(243,200,93,0.2);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+
+    .login-box .om {
+      font-size: 2.8rem;
+      color: #f3c85d;
+      margin-bottom: 8px;
+    }
+
+    .login-box h1 {
+      font-size: 1.5rem;
+      color: #f3c85d;
+      margin-bottom: 6px;
+    }
+
+    .login-box p {
+      color: #a89070;
+      font-size: 0.88rem;
+      margin-bottom: 32px;
+    }
+
+    /* ── Admin Layout ── */
+    #adminScreen { display: none; }
+
+    .topbar {
+      background: rgba(15,10,26,0.95);
+      border-bottom: 1px solid rgba(243,200,93,0.15);
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-brand {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #f3c85d;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .topbar-brand span { font-size: 1.5rem; }
+
+    .main-content {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 36px 20px 60px;
+    }
+
+    .page-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #f3c85d;
+      margin-bottom: 6px;
+    }
+
+    .page-sub {
+      color: #a89070;
+      font-size: 0.88rem;
+      margin-bottom: 32px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: rgba(255,247,229,0.05);
+      border: 1px solid rgba(243,200,93,0.12);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 28px;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #f3c85d;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Form ── */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: #c9a96e;
+      margin-bottom: 7px;
+      text-transform: uppercase;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(243,200,93,0.2);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #f0e9d6;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: #f3c85d;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 160px;
+      line-height: 1.7;
+    }
+
+    select option { background: #1a0a2e; color: #f0e9d6; }
+
+    /* ── Image Upload ── */
+    .image-upload-area {
+      border: 2px dashed rgba(243,200,93,0.3);
+      border-radius: 12px;
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+
+    .image-upload-area:hover {
+      border-color: #f3c85d;
+      background: rgba(243,200,93,0.04);
+    }
+
+    .image-upload-area input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .image-upload-area .upload-icon { font-size: 2rem; margin-bottom: 8px; color: #f3c85d; }
+    .image-upload-area p { color: #a89070; font-size: 0.85rem; }
+    .image-upload-area strong { color: #f0e9d6; font-size: 0.9rem; }
+
+    #imagePreview {
+      margin-top: 14px;
+      display: none;
+    }
+
+    #imagePreview img {
+      width: 100%;
+      max-height: 200px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid rgba(243,200,93,0.2);
+    }
+
+    #imagePreview .img-name {
+      font-size: 0.8rem;
+      color: #a89070;
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #f3c85d, #d9812b);
+      color: #1a0a2e;
+    }
+
+    .btn-danger {
+      background: rgba(220,50,50,0.15);
+      color: #ff6b6b;
+      border: 1px solid rgba(220,50,50,0.3);
+    }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.06);
+      color: #f0e9d6;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .btn-full { width: 100%; justify-content: center; }
+
+    /* ── Status Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      padding: 14px 22px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      z-index: 9999;
+      display: none;
+      max-width: 340px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(20px); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+
+    .toast-success { background: #14532d; color: #bbf7d0; border: 1px solid #16a34a; }
+    .toast-error   { background: #450a0a; color: #fca5a5; border: 1px solid #dc2626; }
+    .toast-info    { background: #1e1b4b; color: #c7d2fe; border: 1px solid #4f46e5; }
+
+    /* ── Progress bar ── */
+    #progressBar {
+      display: none;
+      height: 4px;
+      background: rgba(243,200,93,0.15);
+      border-radius: 4px;
+      margin: 16px 0;
+      overflow: hidden;
+    }
+
+    #progressFill {
+      height: 100%;
+      background: linear-gradient(90deg, #f3c85d, #d9812b);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    /* ── Existing Posts List ── */
+    .post-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(243,200,93,0.1);
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .post-item-info { display: flex; flex-direction: column; gap: 3px; }
+    .post-item-title { font-weight: 600; font-size: 0.95rem; color: #f0e9d6; }
+    .post-item-slug  { font-size: 0.75rem; color: #a89070; }
+
+    /* ── Setup Card ── */
+    .setup-card {
+      background: rgba(243,200,93,0.06);
+      border: 1px solid rgba(243,200,93,0.25);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      font-size: 0.88rem;
+      color: #c9a96e;
+      line-height: 1.7;
+    }
+
+    .setup-card a { color: #f3c85d; }
+
+    .token-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .token-row input { flex: 1; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .form-row { grid-template-columns: 1fr; }
+      .card { padding: 20px; }
+      .topbar { padding: 12px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Login Screen ── -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="om">ॐ</div>
+    <h1>Astroserves Admin</h1>
+    <p>Post manage karne ke liye login karein</p>
+
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="Admin password dalein" />
+    </div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()">🔓 Login</button>
+    <p id="loginError" style="color:#ff6b6b;font-size:0.82rem;margin-top:12px;display:none;">
+      Galat password. Dobara try karein.
+    </p>
+  </div>
+</div>
+
+<!-- ── Admin Screen ── -->
+<div id="adminScreen">
+
+  <div class="topbar">
+    <div class="topbar-brand">
+      <span>ॐ</span> Astroserves Admin
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <a href="/" class="btn btn-ghost" style="text-decoration:none;padding:8px 16px;font-size:0.82rem;">🌐 Website Dekho</a>
+      <button class="btn btn-ghost" style="padding:8px 16px;font-size:0.82rem;" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="page-title">📝 New Post Likho</div>
+    <div class="page-sub">Post likhkar GitHub par automatically save ho jayegi</div>
+
+    <!-- GitHub Config Card -->
+    <div class="card" id="configCard">
+      <div class="card-title">⚙️ GitHub Setup (Ek Baar)</div>
+      <div class="setup-card">
+        <strong>GitHub Personal Access Token chahiye:</strong><br/>
+        1. <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens/new</a> par jao<br/>
+        2. Note: <code>Astroserves Admin</code>, Expiration: <code>No expiration</code><br/>
+        3. Scopes mein sirf <strong>repo</strong> tick karo<br/>
+        4. "Generate token" click karo aur copy karo<br/>
+        5. Neeche paste karo — yeh sirf is browser mein save hoga
+      </div>
+      <div class="token-row">
+        <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" />
+        <button class="btn btn-primary" onclick="saveToken()">💾 Save</button>
+      </div>
+      <p id="tokenStatus" style="font-size:0.8rem;margin-top:8px;color:#a89070;"></p>
+    </div>
+
+    <!-- New Post Form -->
+    <div class="card">
+      <div class="card-title">✍️ Post Details</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Post Title *</label>
+          <input type="text" id="postTitle" placeholder="Jaise: Kundali ka Rahasya" />
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="postCategory">
+            <option>Astrology</option>
+            <option>Vastu</option>
+            <option>Spirituality</option>
+            <option>Palmistry</option>
+            <option>Janampatri</option>
+            <option>Remedies</option>
+            <option>General</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="postDate" />
+        </div>
+        <div class="form-group">
+          <label>Slug (URL Name) — auto banta hai</label>
+          <input type="text" id="postSlug" placeholder="jaise: kundali-ka-rahasya" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Post Content *</label>
+        <textarea id="postContent" placeholder="Yahan apna post likhein...&#10;&#10;Astrology ke baare mein..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Post Image (Optional)</label>
+        <div class="image-upload-area">
+          <input type="file" id="postImage" accept="image/*" onchange="previewImage(this)" />
+          <div class="upload-icon">🖼️</div>
+          <strong>Image click karke choose karein</strong>
+          <p>JPG, PNG, WebP — Max 5MB</p>
+        </div>
+        <div id="imagePreview">
+          <img id="previewImg" src="" alt="Preview" />
+          <div class="img-name" id="imgName"></div>
+        </div>
+      </div>
+
+      <div id="progressBar"><div id="progressFill"></div></div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="publishBtn" onclick="publishPost()">
+          🚀 Publish Post
+        </button>
+        <button class="btn btn-ghost" onclick="clearForm()">🗑️ Clear</button>
+      </div>
+    </div>
+
+    <!-- Existing Posts -->
+    <div class="card">
+      <div class="card-title">📋 Existing Posts</div>
+      <div id="existingPosts">
+        <p style="color:#a89070;font-size:0.88rem;">Posts load ho rahi hain...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ── Config ──
+const REPO_OWNER = "AnujShiv27";
+const REPO_NAME  = "anujshiv27.github.io";
+const BRANCH     = "main";
+const ADMIN_PASS = "astro@2025"; // Apna password yahan change karein
+
+// ── Login ──
+function doLogin() {
+  const pass = document.getElementById("loginPassword").value;
+  if (pass === ADMIN_PASS) {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("adminScreen").style.display = "block";
+    initAdmin();
+  } else {
+    document.getElementById("loginError").style.display = "block";
+  }
+}
+
+document.getElementById("loginPassword").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") doLogin();
+});
+
+function logout() {
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("adminScreen").style.display = "none";
+  document.getElementById("loginPassword").value = "";
+}
+
+// ── Token ──
+function saveToken() {
+  const token = document.getElementById("githubToken").value.trim();
+  if (!token) { showToast("Token khaali hai!", "error"); return; }
+  localStorage.setItem("gh_token", token);
+  document.getElementById("tokenStatus").textContent = "✅ Token save ho gaya!";
+  showToast("GitHub Token save ho gaya!", "success");
+}
+
+function getToken() {
+  return localStorage.getItem("gh_token") || "";
+}
+
+// ── Init ──
+function initAdmin() {
+  // Set today's date
+  document.getElementById("postDate").value = new Date().toISOString().split("T")[0];
+
+  // Load saved token
+  const savedToken = getToken();
+  if (savedToken) {
+    document.getElementById("githubToken").value = savedToken;
+    document.getElementById("tokenStatus").textContent = "✅ Token already saved hai";
+  }
+
+  // Auto-generate slug from title
+  document.getElementById("postTitle").addEventListener("input", function() {
+    document.getElementById("postSlug").value = makeSlug(this.value);
+  });
+
+  loadExistingPosts();
+}
+
+function makeSlug(title) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9ऀ-ॿ\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 60);
+}
+
+// ── Image Preview ──
+function previewImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById("previewImg").src = e.target.result;
+    document.getElementById("imgName").textContent = file.name;
+    document.getElementById("imagePreview").style.display = "block";
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── GitHub API ──
+async function githubRequest(method, path, body) {
+  const token = getToken();
+  if (!token) throw new Error("GitHub Token save nahi hai! Pehle token daalo.");
+
+  const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+    method,
+    headers: {
+      Authorization: `token ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/vnd.github.v3+json",
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "GitHub API error");
+  return data;
+}
+
+async function getFileSha(path) {
+  try {
+    const data = await githubRequest("GET", path);
+    return data.sha;
+  } catch {
+    return null;
+  }
+}
+
+// ── Publish ──
+async function publishPost() {
+  const title    = document.getElementById("postTitle").value.trim();
+  const slug     = document.getElementById("postSlug").value.trim();
+  const category = document.getElementById("postCategory").value;
+  const date     = document.getElementById("postDate").value;
+  const content  = document.getElementById("postContent").value.trim();
+  const imageFile = document.getElementById("postImage").files[0];
+
+  if (!title) { showToast("Title khaali hai!", "error"); return; }
+  if (!slug)  { showToast("Slug khaali hai!", "error"); return; }
+  if (!content) { showToast("Content khaali hai!", "error"); return; }
+  if (!getToken()) { showToast("Pehle GitHub Token save karo!", "error"); return; }
+
+  const btn = document.getElementById("publishBtn");
+  btn.disabled = true;
+  btn.textContent = "⏳ Publishing...";
+
+  setProgress(0);
+
+  try {
+    // Format date nicely
+    const dateFormatted = date
+      ? new Date(date).toLocaleDateString("en-IN", { day:"2-digit", month:"long", year:"numeric" })
+      : new Date().toLocaleDateString("en-IN", { day:"2-digit", month:"long", year:"numeric" });
+
+    // 1. Upload image if provided
+    let imgExt = null;
+    if (imageFile) {
+      showToast("Image upload ho rahi hai...", "info");
+      setProgress(20);
+      imgExt = imageFile.name.split(".").pop().toLowerCase();
+      const imgBase64 = await fileToBase64(imageFile);
+      const imgPath = `images/posts/${slug}.${imgExt}`;
+      const imgSha = await getFileSha(imgPath);
+      await githubRequest("PUT", imgPath, {
+        message: `Add image for post: ${slug}`,
+        content: imgBase64,
+        branch: BRANCH,
+        ...(imgSha ? { sha: imgSha } : {}),
+      });
+      setProgress(50);
+    }
+
+    // 2. Create .txt file
+    showToast("Post file bana rahi hai...", "info");
+    const txtContent = `Title: ${title}\nDate: ${dateFormatted}\nCategory: ${category}\n\n${content}`;
+    const txtBase64  = btoa(unescape(encodeURIComponent(txtContent)));
+    const txtPath    = `posts/${slug}.txt`;
+    const txtSha     = await getFileSha(txtPath);
+    await githubRequest("PUT", txtPath, {
+      message: `Add post: ${slug}`,
+      content: txtBase64,
+      branch: BRANCH,
+      ...(txtSha ? { sha: txtSha } : {}),
+    });
+    setProgress(75);
+
+    // 3. Update index.json
+    showToast("Index update ho raha hai...", "info");
+    const indexPath = "posts/index.json";
+    const indexFile = await githubRequest("GET", indexPath);
+    let posts = JSON.parse(atob(indexFile.content.replace(/\n/g, "")));
+    if (!posts.includes(slug)) {
+      posts.unshift(slug); // latest post pehle
+    }
+    await githubRequest("PUT", indexPath, {
+      message: `Update posts index: add ${slug}`,
+      content: btoa(JSON.stringify(posts, null, 2) + "\n"),
+      sha: indexFile.sha,
+      branch: BRANCH,
+    });
+    setProgress(100);
+
+    showToast(`✅ Post "${title}" publish ho gayi! 1-2 min mein live hogi.`, "success");
+    clearForm();
+    loadExistingPosts();
+
+  } catch (err) {
+    showToast("❌ Error: " + err.message, "error");
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "🚀 Publish Post";
+    setTimeout(() => setProgress(0, true), 2000);
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result.split(",")[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── Load Existing Posts ──
+async function loadExistingPosts() {
+  const container = document.getElementById("existingPosts");
+  try {
+    const res = await fetch(`posts/index.json?t=${Date.now()}`);
+    const slugs = await res.json();
+    if (!slugs.length) {
+      container.innerHTML = "<p style='color:#a89070;font-size:0.88rem;'>Abhi koi post nahi hai.</p>";
+      return;
+    }
+    container.innerHTML = slugs.map(slug => `
+      <div class="post-item" id="item-${slug}">
+        <div class="post-item-info">
+          <div class="post-item-title">📄 ${slug}</div>
+          <div class="post-item-slug">posts/${slug}.txt</div>
+        </div>
+        <button class="btn btn-danger" style="padding:8px 14px;font-size:0.8rem;" onclick="deletePost('${slug}')">
+          🗑️ Delete
+        </button>
+      </div>
+    `).join("");
+  } catch {
+    container.innerHTML = "<p style='color:#a89070;font-size:0.88rem;'>Posts load nahi ho sake.</p>";
+  }
+}
+
+// ── Delete Post ──
+async function deletePost(slug) {
+  if (!confirm(`"${slug}" post delete karna chahte ho?`)) return;
+  if (!getToken()) { showToast("Pehle GitHub Token save karo!", "error"); return; }
+
+  try {
+    // Remove from index.json
+    const indexPath = "posts/index.json";
+    const indexFile = await githubRequest("GET", indexPath);
+    let posts = JSON.parse(atob(indexFile.content.replace(/\n/g, "")));
+    posts = posts.filter(p => p !== slug);
+    await githubRequest("PUT", indexPath, {
+      message: `Remove post from index: ${slug}`,
+      content: btoa(JSON.stringify(posts, null, 2) + "\n"),
+      sha: indexFile.sha,
+      branch: BRANCH,
+    });
+
+    // Delete .txt file
+    const txtPath = `posts/${slug}.txt`;
+    const txtSha  = await getFileSha(txtPath);
+    if (txtSha) {
+      await githubRequest("DELETE", txtPath, {
+        message: `Delete post: ${slug}`,
+        sha: txtSha,
+        branch: BRANCH,
+      });
+    }
+
+    showToast(`Post "${slug}" delete ho gayi!`, "success");
+    document.getElementById(`item-${slug}`)?.remove();
+
+  } catch (err) {
+    showToast("❌ Error: " + err.message, "error");
+  }
+}
+
+// ── Helpers ──
+function clearForm() {
+  document.getElementById("postTitle").value = "";
+  document.getElementById("postSlug").value  = "";
+  document.getElementById("postContent").value = "";
+  document.getElementById("postImage").value = "";
+  document.getElementById("imagePreview").style.display = "none";
+  document.getElementById("postDate").value = new Date().toISOString().split("T")[0];
+}
+
+function setProgress(val, hide = false) {
+  const bar  = document.getElementById("progressBar");
+  const fill = document.getElementById("progressFill");
+  if (hide) { bar.style.display = "none"; return; }
+  bar.style.display = "block";
+  fill.style.width  = val + "%";
+}
+
+let toastTimer;
+function showToast(msg, type = "info") {
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.className = `toast-${type}`;
+  toast.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.style.display = "none"; }, 4500);
+}
+</script>
+</body>
+</html>
