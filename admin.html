@@ -476,7 +476,10 @@
 <script>
 // ── Unicode-safe Base64 ──
 function toBase64(str) {
-  return btoa(unescape(encodeURIComponent(str)));
+  const bytes = new TextEncoder().encode(str);
+  let binary = "";
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  return btoa(binary);
 }
 
 // ── Config ──
