@@ -474,6 +474,11 @@
 <div id="toast"></div>
 
 <script>
+// ── Unicode-safe Base64 ──
+function toBase64(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
 // ── Config ──
 const REPO_OWNER = "AnujShiv27";
 const REPO_NAME  = "anujshiv27.github.io";
@@ -634,7 +639,7 @@ async function publishPost() {
     // 2. Create .txt file
     showToast("Post file bana rahi hai...", "info");
     const txtContent = `Title: ${title}\nDate: ${dateFormatted}\nCategory: ${category}\n\n${content}`;
-    const txtBase64  = btoa(unescape(encodeURIComponent(txtContent)));
+    const txtBase64  = toBase64(txtContent);
     const txtPath    = `posts/${slug}.txt`;
     const txtSha     = await getFileSha(txtPath);
     await githubRequest("PUT", txtPath, {
@@ -655,7 +660,7 @@ async function publishPost() {
     }
     await githubRequest("PUT", indexPath, {
       message: `Update posts index: add ${slug}`,
-      content: btoa(JSON.stringify(posts, null, 2) + "\n"),
+      content: toBase64(JSON.stringify(posts, null, 2) + "\n"),
       sha: indexFile.sha,
       branch: BRANCH,
     });
@@ -726,7 +731,7 @@ async function deletePost(slug) {
     posts = posts.filter(p => p !== slug);
     await githubRequest("PUT", indexPath, {
       message: `Remove post from index: ${slug}`,
-      content: btoa(JSON.stringify(posts, null, 2) + "\n"),
+      content: toBase64(JSON.stringify(posts, null, 2) + "\n"),
       sha: indexFile.sha,
       branch: BRANCH,
     });
