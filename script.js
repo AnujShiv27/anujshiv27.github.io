@@ -9,11 +9,11 @@ if (acharyaImgElement) {
 }
 
 const services = [
-  { title: "Astrology Consultation", icon: "fas fa-chart-line", description: "Precise astrology readings for life, relationships, career, marriage, and destiny. Personalized guidance based on your birth chart.", price: "Price: Call for Details" },
-  { title: "Janampatri Making", icon: "fas fa-scroll", description: "Authentic birth chart (Kundli) creation with detailed life predictions, planetary analysis, and remedial suggestions.", price: "Price: Call for Details" },
-  { title: "Vastu Consultation - Home Visit", icon: "fas fa-home", description: "Professional in-person vastu inspection and customized solutions for your home's energy and prosperity.", price: "Price: Call for Details" },
-  { title: "Vastu Consultation - Online", icon: "fas fa-video", description: "Remote vastu guidance through video consultation for home, office, or business from anywhere.", price: "Price: Call for Details" },
-  { title: "Learn Astrology & Vastu", icon: "fas fa-book-open", description: "Educational sessions to learn the basics of Vedic Astrology and Vastu Shastra at your own pace.", price: "Price: Call for Details" },
+  { title: "Astrology Consultation", icon: "images/icon-astrology.png", description: "Precise astrology readings for life, relationships, career, marriage, and destiny. Personalized guidance based on your birth chart.", price: "Price: Call for Details" },
+  { title: "Janampatri Making", icon: "images/icon-janampatri.png", description: "Authentic birth chart (Kundli) creation with detailed life predictions, planetary analysis, and remedial suggestions.", price: "Price: Call for Details" },
+  { title: "Vastu Consultation - Home Visit", icon: "images/icon-vastu-home.png", description: "Professional in-person vastu inspection and customized solutions for your home's energy and prosperity.", price: "Price: Call for Details" },
+  { title: "Vastu Consultation - Online", icon: "images/icon-vastu-online.png", description: "Remote vastu guidance through video consultation for home, office, or business from anywhere.", price: "Price: Call for Details" },
+  { title: "Learn Astrology & Vastu", icon: "images/icon-learn.png", description: "Educational sessions to learn the basics of Vedic Astrology and Vastu Shastra at your own pace.", price: "Price: Call for Details" },
 ];
 
 const servicesGrid = document.getElementById("servicesGrid");
@@ -24,7 +24,7 @@ services.forEach((service, index) => {
   if (index % 3 === 1) card.classList.add("delay-1");
   if (index % 3 === 2) card.classList.add("delay-2");
   card.innerHTML = `
-    <div class="service-icon"><i class="${service.icon}"></i></div>
+    <div class="service-icon"><img src="${service.icon}" alt="${service.title}" /></div>
     <h3>${service.title}</h3>
     <p>${service.description}</p>
     <div class="service-meta">
