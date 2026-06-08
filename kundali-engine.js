@@ -1,181 +1,211 @@
 /**
- * Kundali Engine - Pure JavaScript Vedic Astrology Calculator
- * No external APIs. Self-contained astronomy math.
+ * Kundali Engine v2 — Corrected Vedic Astrology Calculator
+ * Fixes: Lahiri Ayanamsa, planet L1 coefficients, Lagna quadrant
+ * Reference: Meeus "Astronomical Algorithms" 2nd Ed.
  */
 (function () {
   "use strict";
 
-  // ── Constants ──────────────────────────────────────────────────────────────
   const DEG = Math.PI / 180;
   const RAD = 180 / Math.PI;
 
   const RASHI_NAMES = [
-    "Mesh", "Vrishabh", "Mithun", "Kark", "Simha", "Kanya",
-    "Tula", "Vrishchik", "Dhanu", "Makar", "Kumbh", "Meen"
+    "Mesh","Vrishabh","Mithun","Kark","Simha","Kanya",
+    "Tula","Vrishchik","Dhanu","Makar","Kumbh","Meen"
   ];
 
-  const PLANET_NAMES = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"];
-  const PLANET_ABBR  = ["Su",  "Mo",  "Ma",  "Me",      "Ju",      "Ve",    "Sa",    "Ra",  "Ke"];
+  const PLANET_NAMES = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+  const PLANET_ABBR  = ["Su","Mo","Ma","Me","Ju","Ve","Sa","Ra","Ke"];
 
-  // Nakshatra lords for Vimshottari Dasha (0-index matches nakshatra 1-27)
   const NAKSHATRA_DATA = [
-    { name: "Ashwini",       lord: "Ketu",    years: 7  },
-    { name: "Bharani",       lord: "Venus",   years: 20 },
-    { name: "Krittika",      lord: "Sun",     years: 6  },
-    { name: "Rohini",        lord: "Moon",    years: 10 },
-    { name: "Mrigashira",    lord: "Mars",    years: 7  },
-    { name: "Ardra",         lord: "Rahu",    years: 18 },
-    { name: "Punarvasu",     lord: "Jupiter", years: 16 },
-    { name: "Pushya",        lord: "Saturn",  years: 19 },
-    { name: "Ashlesha",      lord: "Mercury", years: 17 },
-    { name: "Magha",         lord: "Ketu",    years: 7  },
-    { name: "Purva Phalguni",lord: "Venus",   years: 20 },
-    { name: "Uttara Phalguni",lord:"Sun",     years: 6  },
-    { name: "Hasta",         lord: "Moon",    years: 10 },
-    { name: "Chitra",        lord: "Mars",    years: 7  },
-    { name: "Swati",         lord: "Rahu",    years: 18 },
-    { name: "Vishakha",      lord: "Jupiter", years: 16 },
-    { name: "Anuradha",      lord: "Saturn",  years: 19 },
-    { name: "Jyeshtha",      lord: "Mercury", years: 17 },
-    { name: "Mula",          lord: "Ketu",    years: 7  },
-    { name: "Purva Ashadha", lord: "Venus",   years: 20 },
-    { name: "Uttara Ashadha",lord: "Sun",     years: 6  },
-    { name: "Shravana",      lord: "Moon",    years: 10 },
-    { name: "Dhanishtha",    lord: "Mars",    years: 7  },
-    { name: "Shatabhisha",   lord: "Rahu",    years: 18 },
-    { name: "Purva Bhadrapada",lord:"Jupiter",years: 16 },
-    { name: "Uttara Bhadrapada",lord:"Saturn",years: 19 },
-    { name: "Revati",        lord: "Mercury", years: 17 },
+    {name:"Ashwini",       lord:"Ketu",    years:7 },
+    {name:"Bharani",       lord:"Venus",   years:20},
+    {name:"Krittika",      lord:"Sun",     years:6 },
+    {name:"Rohini",        lord:"Moon",    years:10},
+    {name:"Mrigashira",    lord:"Mars",    years:7 },
+    {name:"Ardra",         lord:"Rahu",    years:18},
+    {name:"Punarvasu",     lord:"Jupiter", years:16},
+    {name:"Pushya",        lord:"Saturn",  years:19},
+    {name:"Ashlesha",      lord:"Mercury", years:17},
+    {name:"Magha",         lord:"Ketu",    years:7 },
+    {name:"Purva Phalguni",lord:"Venus",   years:20},
+    {name:"Uttara Phalguni",lord:"Sun",    years:6 },
+    {name:"Hasta",         lord:"Moon",    years:10},
+    {name:"Chitra",        lord:"Mars",    years:7 },
+    {name:"Swati",         lord:"Rahu",    years:18},
+    {name:"Vishakha",      lord:"Jupiter", years:16},
+    {name:"Anuradha",      lord:"Saturn",  years:19},
+    {name:"Jyeshtha",      lord:"Mercury", years:17},
+    {name:"Mula",          lord:"Ketu",    years:7 },
+    {name:"Purva Ashadha", lord:"Venus",   years:20},
+    {name:"Uttara Ashadha",lord:"Sun",     years:6 },
+    {name:"Shravana",      lord:"Moon",    years:10},
+    {name:"Dhanishtha",    lord:"Mars",    years:7 },
+    {name:"Shatabhisha",   lord:"Rahu",    years:18},
+    {name:"Purva Bhadrapada",lord:"Jupiter",years:16},
+    {name:"Uttara Bhadrapada",lord:"Saturn",years:19},
+    {name:"Revati",        lord:"Mercury", years:17},
   ];
 
   const DASHA_ORDER = ["Ketu","Venus","Sun","Moon","Mars","Rahu","Jupiter","Saturn","Mercury"];
-  const DASHA_YEARS = { Ketu:7, Venus:20, Sun:6, Moon:10, Mars:7, Rahu:18, Jupiter:16, Saturn:19, Mercury:17 };
+  const DASHA_YEARS = {Ketu:7,Venus:20,Sun:6,Moon:10,Mars:7,Rahu:18,Jupiter:16,Saturn:19,Mercury:17};
   const TOTAL_DASHA_YEARS = 120;
 
-  // Exaltation / debilitation / own sign (tropical longitude, will correct by ayanamsa in use)
+  // Sidereal exaltation/debilitation/own (in sidereal degrees)
   const PLANET_STATUS = {
-    Sun:     { exalt: 0,  exaltDeg: 10,  debil: 180, own: [120]       },
-    Moon:    { exalt: 30, exaltDeg: 3,   debil: 210, own: [90]        },
-    Mars:    { exalt: 270,exaltDeg: 28,  debil: 90,  own: [0,210]     },
-    Mercury: { exalt: 150,exaltDeg: 15,  debil: 330, own: [60,150]    },
-    Jupiter: { exalt: 90, exaltDeg: 5,   debil: 270, own: [240,330]   },
-    Venus:   { exalt: 330,exaltDeg: 27,  debil: 150, own: [30,180]    },
-    Saturn:  { exalt: 180,exaltDeg: 20,  debil: 0,   own: [270,300]   },
-    Rahu:    { exalt: 60, exaltDeg: 0,   debil: 240, own: []          },
-    Ketu:    { exalt: 240,exaltDeg: 0,   debil: 60,  own: []          },
+    Sun:     {exalt:0,   debil:180, own:[120]     },
+    Moon:    {exalt:33,  debil:213, own:[90]       },
+    Mars:    {exalt:268, debil:88,  own:[0,210]    },
+    Mercury: {exalt:165, debil:345, own:[60,150]   },
+    Jupiter: {exalt:95,  debil:275, own:[240,330]  },
+    Venus:   {exalt:357, debil:177, own:[30,180]   },
+    Saturn:  {exalt:200, debil:20,  own:[270,300]  },
+    Rahu:    {exalt:60,  debil:240, own:[]         },
+    Ketu:    {exalt:240, debil:60,  own:[]         },
   };
 
-  // ── Julian Day Number ─────────────────────────────────────────────────────
+  // ── Julian Day Number ────────────────────────────────────────────────────
   function toJD(year, month, day, hour, minute, second) {
-    // Gregorian calendar
     if (month <= 2) { year--; month += 12; }
     const A = Math.floor(year / 100);
     const B = 2 - A + Math.floor(A / 4);
-    const JD = Math.floor(365.25 * (year + 4716)) +
-               Math.floor(30.6001 * (month + 1)) +
-               day + B - 1524.5 +
-               (hour + minute / 60 + second / 3600) / 24;
-    return JD;
+    return Math.floor(365.25 * (year + 4716))
+         + Math.floor(30.6001 * (month + 1))
+         + day + B - 1524.5
+         + (hour + minute / 60 + (second || 0) / 3600) / 24;
   }
 
   function jdFromBirthData(bd) {
-    const [y, m, d]   = bd.date.split("-").map(Number);
-    const [hr, mn]    = bd.time.split(":").map(Number);
-    const utcHour     = hr - bd.timezone;
-    return toJD(y, m, d, utcHour, mn, 0);
+    const [y, m, d] = bd.date.split("-").map(Number);
+    const [hr, mn]  = bd.time.split(":").map(Number);
+    const utcHour   = hr - Number(bd.timezone);
+    // Handle day rollover
+    let dy = d, mo = m, yr = y, uh = utcHour;
+    if (uh < 0)  { uh += 24; dy -= 1; }
+    if (uh >= 24){ uh -= 24; dy += 1; }
+    return toJD(yr, mo, dy, uh, mn, 0);
   }
 
-  // ── Lahiri Ayanamsa ───────────────────────────────────────────────────────
+  // ── Normalize angle to [0, 360) ──────────────────────────────────────────
+  function norm360(x) { return ((x % 360) + 360) % 360; }
+
+  // ── Lahiri Ayanamsa (Chitrapaksha) — corrected ──────────────────────────
+  // Reference: 23.85472° at J2000.0 (Jan 1.5, 2000 UT)
+  // Precession rate: 50.2796" / year = 0.01397° / year
   function lahiriAyanamsa(jd) {
-    const T = (jd - 2451545.0) / 36525.0;
-    // IAU 1976 precession + Lahiri correction
-    const ayanamsa = 23.85 + 0.013645 * T + T * T / 200000;
-    // More precise formula used by many astrology software
-    const t = (jd - 2299160.0) / 36525.0;
-    return 22.46047 + 1.396042 * t + 0.000308 * t * t;
+    const T = (jd - 2451545.0) / 365.25; // Julian years from J2000
+    return 23.85472 + 0.013969 * T;
   }
 
-  // ── Sun position (Meeus low precision) ───────────────────────────────────
+  // ── Sun (Meeus Ch.25, accurate to ~0.01°) ───────────────────────────────
   function sunLongitude(jd) {
     const n = jd - 2451545.0;
-    const L = (280.460 + 0.9856474 * n) % 360;
-    const g = ((357.528 + 0.9856003 * n) % 360) * DEG;
-    const lambda = L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g);
-    return ((lambda % 360) + 360) % 360;
+    const T = n / 36525.0;
+    const L0 = norm360(280.46646 + 0.9856473 * n);
+    const M  = norm360(357.52911 + 0.98560028 * n) * DEG;
+    const C  = (1.914602 - 0.004817*T - 0.000014*T*T) * Math.sin(M)
+             + (0.019993 - 0.000101*T) * Math.sin(2*M)
+             +  0.000289 * Math.sin(3*M);
+    const sunLon = norm360(L0 + C);
+    // Apparent: apply aberration (~-20.4")
+    return norm360(sunLon - 0.00569 - 0.00478 * Math.sin(norm360(125.04 - 1934.136*T) * DEG));
   }
 
-  // ── Moon position ─────────────────────────────────────────────────────────
+  // ── Moon (Meeus Ch.47 simplified, accurate to ~0.1°) ────────────────────
   function moonLongitude(jd) {
-    const T = (jd - 2451545.0) / 36525.0;
-    const L0 = 218.316 + 13.176396 * (jd - 2451545.0);
-    const M  = (134.963 + 13.064993 * (jd - 2451545.0)) * DEG;
-    const F  = (93.272  + 13.229350 * (jd - 2451545.0)) * DEG;
-    const D  = (297.850 + 12.190749 * (jd - 2451545.0)) * DEG;
-    const Msun = (357.528 + 0.9856003 * (jd - 2451545.0)) * DEG;
-    const lon = L0
-      + 6.289 * Math.sin(M)
-      - 1.274 * Math.sin(2*D - M)
-      + 0.658 * Math.sin(2*D)
-      - 0.186 * Math.sin(Msun)
-      - 0.059 * Math.sin(2*D - 2*M)
-      - 0.057 * Math.sin(2*D - M + Msun)
-      + 0.053 * Math.sin(2*D + M)
-      + 0.046 * Math.sin(2*D - Msun)
-      + 0.041 * Math.sin(M - Msun)
-      - 0.035 * Math.sin(D)
-      - 0.031 * Math.sin(M + Msun)
-      - 0.015 * Math.sin(2*F - 2*D)
-      + 0.011 * Math.sin(M - 4*D);
-    return ((lon % 360) + 360) % 360;
+    const n = jd - 2451545.0;
+    const T = n / 36525.0;
+    // Fundamental arguments
+    const Lp = norm360(218.3165 + 13.176396 * n);       // Moon mean longitude
+    const M  = norm360(357.5291 +  0.985600 * n) * DEG; // Sun mean anomaly
+    const Mp = norm360(134.9634 + 13.064993 * n) * DEG; // Moon mean anomaly
+    const D  = norm360(297.8502 + 12.190749 * n) * DEG; // Moon elongation
+    const F  = norm360( 93.2721 + 13.229350 * n) * DEG; // Moon arg latitude
+    const lon = Lp
+      + 6.2888 * Math.sin(Mp)
+      - 1.2740 * Math.sin(2*D - Mp)
+      + 0.6583 * Math.sin(2*D)
+      - 0.1858 * Math.sin(M)
+      - 0.0587 * Math.sin(2*D - 2*Mp)
+      - 0.0559 * Math.sin(2*D - M - Mp)
+      + 0.0533 * Math.sin(2*D + Mp)
+      + 0.0460 * Math.sin(2*D - M)
+      + 0.0412 * Math.sin(Mp - M)
+      - 0.0355 * Math.sin(D)
+      - 0.0323 * Math.sin(Mp + M)
+      - 0.0148 * Math.sin(2*F - 2*D)
+      + 0.0109 * Math.sin(Mp - 4*D)
+      - 0.0108 * Math.sin(3*Mp);
+    return norm360(lon);
   }
 
-  // ── Planetary positions (simplified VSOP87-style) ─────────────────────────
-  function marsLongitude(jd) {
+  // ── Outer/inner planets using Meeus Table 33.a coefficients ─────────────
+  // L = mean longitude (deg), L1 = rate (deg/century)
+  // M = mean anomaly (deg), equation of center
+  function planetLon(jd, L0, L1, M0, M1, eqC1, eqC2, eqC3) {
     const T = (jd - 2451545.0) / 36525.0;
-    const M = ((19.373 + 0.5240207766 * (jd - 2451545.0)) % 360) * DEG;
-    const L = 355.433 + 19373.18 * T;
-    return ((L + 10.691 * Math.sin(M) + 0.623 * Math.sin(2*M)) % 360 + 360) % 360;
+    const L = norm360(L0 + L1 * T);
+    const M = norm360(M0 + M1 * T) * DEG;
+    const C = eqC1 * Math.sin(M)
+            + eqC2 * Math.sin(2*M)
+            + (eqC3||0) * Math.sin(3*M);
+    return norm360(L + C);
+  }
+
+  // Corrected coefficients from Meeus Table 33.a
+  function marsLongitude(jd) {
+    return planetLon(jd,
+      355.4333, 19140.2993,  // L0, L1 (deg/century)
+      19.3730,  19138.8776,  // M0, M1
+      10.6912, 0.6228, 0.0503
+    );
   }
 
   function mercuryLongitude(jd) {
-    const n = jd - 2451545.0;
-    const L = (252.251 + 4.09233 * n) % 360;
-    const M = ((174.795 + 4.09233 * n) % 360) * DEG;
-    return ((L + 23.440 * Math.sin(M) + 2.998 * Math.sin(2*M)) % 360 + 360) % 360;
+    return planetLon(jd,
+      252.2503, 149474.0714,
+      174.7948, 149472.5153,
+      23.4400, 2.9818, 0.5255
+    );
   }
 
   function jupiterLongitude(jd) {
-    const n = jd - 2451545.0;
-    const L = (34.351 + 0.08309 * n) % 360;
-    const M = ((20.020 + 0.08309 * n) % 360) * DEG;
-    return ((L + 5.555 * Math.sin(M) + 0.168 * Math.sin(2*M)) % 360 + 360) % 360;
+    return planetLon(jd,
+      34.3515, 3034.9057,
+      20.9862, 3033.6272,
+      5.5549, 0.1683, 0.0071
+    );
   }
 
   function venusLongitude(jd) {
-    const n = jd - 2451545.0;
-    const L = (181.979 + 1.60213 * n) % 360;
-    const M = ((212.448 + 1.60213 * n) % 360) * DEG;
-    return ((L + 0.776 * Math.sin(M)) % 360 + 360) % 360;
+    return planetLon(jd,
+      181.9798, 58519.2117,
+      50.4161,  58517.8039,
+      0.7758, 0.0033, 0
+    );
   }
 
   function saturnLongitude(jd) {
-    const n = jd - 2451545.0;
-    const L = (50.077 + 0.03346 * n) % 360;
-    const M = ((317.020 + 0.03346 * n) % 360) * DEG;
-    return ((L + 6.406 * Math.sin(M) + 0.319 * Math.sin(2*M)) % 360 + 360) % 360;
+    return planetLon(jd,
+      50.0774, 1223.5096,
+      317.0207, 1222.1138,
+      6.3585, 0.2204, 0.0106
+    );
   }
 
-  // Rahu (mean node) - retrograde motion
+  // Rahu (Mean North Node) — retrograde, Meeus Ch.22
   function rahuLongitude(jd) {
     const T = (jd - 2451545.0) / 36525.0;
-    const omega = 125.0445 - 1934.1362 * T + 0.0020754 * T * T;
-    return ((omega % 360) + 360) % 360;
+    const omega = 125.04452 - 1934.136261 * T
+                + 0.0020708 * T * T
+                + T * T * T / 450000;
+    return norm360(omega);
   }
 
   // ── All 9 planets ─────────────────────────────────────────────────────────
   function getAllPlanets(jd) {
-    const ayanamsa = lahiriAyanamsa(jd);
-    const raw = [
+    const ayan = lahiriAyanamsa(jd);
+    const tropLons = [
       sunLongitude(jd),
       moonLongitude(jd),
       marsLongitude(jd),
@@ -184,70 +214,82 @@
       venusLongitude(jd),
       saturnLongitude(jd),
       rahuLongitude(jd),
-      (rahuLongitude(jd) + 180) % 360,  // Ketu = Rahu + 180
+      norm360(rahuLongitude(jd) + 180), // Ketu
     ];
-    return raw.map((lon, i) => {
-      const sid = ((lon - ayanamsa) % 360 + 360) % 360;
+
+    return tropLons.map((trop, i) => {
+      const sid  = norm360(trop - ayan);
       const rashi = Math.floor(sid / 30);
-      const degree = sid % 30;
-      const nakIdx = Math.floor(sid / (360/27));
-      const pada   = Math.floor((sid % (360/27)) / (360/27/4)) + 1;
+      const deg   = sid - rashi * 30;
+      const nakIdx = Math.floor(sid / (360 / 27));
+      const nakFrac = (sid % (360 / 27)) / (360 / 27);
+      const pada   = Math.floor(nakFrac * 4) + 1;
       return {
-        name:      PLANET_NAMES[i],
-        abbr:      PLANET_ABBR[i],
-        longitude: sid,
-        rashi:     rashi,
-        rashiName: RASHI_NAMES[rashi],
-        degree:    degree,
-        nakshatra: NAKSHATRA_DATA[nakIdx].name,
-        nakshatraLord: NAKSHATRA_DATA[nakIdx].lord,
-        pada:      pada,
-        status:    getPlanetStatus(PLANET_NAMES[i], sid),
+        name:         PLANET_NAMES[i],
+        abbr:         PLANET_ABBR[i],
+        longitude:    sid,
+        tropLon:      trop,
+        rashi,
+        rashiName:    RASHI_NAMES[rashi],
+        degree:       deg,
+        nakshatra:    NAKSHATRA_DATA[nakIdx].name,
+        nakshatraLord:NAKSHATRA_DATA[nakIdx].lord,
+        pada,
+        status:       getPlanetStatus(PLANET_NAMES[i], sid),
       };
     });
   }
 
-  function getPlanetStatus(name, lon) {
-    const data = PLANET_STATUS[name];
-    if (!data) return "Neutral";
-    const rashi = Math.floor(lon / 30);
-    const exaltRashi = Math.floor(data.exalt / 30);
-    const debilRashi = Math.floor(data.debil / 30);
-    const ownRashis  = data.own.map(l => Math.floor(l / 30));
+  function getPlanetStatus(name, sid) {
+    const d = PLANET_STATUS[name];
+    if (!d) return "Neutral";
+    const rashi      = Math.floor(sid / 30);
+    const exaltRashi = Math.floor(d.exalt / 30);
+    const debilRashi = Math.floor(d.debil / 30);
+    const ownRashis  = d.own.map(l => Math.floor(l / 30));
     if (rashi === exaltRashi) return "Exalted";
     if (rashi === debilRashi) return "Debilitated";
     if (ownRashis.includes(rashi)) return "Own Sign";
     return "Neutral";
   }
 
-  // ── Lagna (Ascendant) ─────────────────────────────────────────────────────
+  // ── Lagna (Ascendant) — corrected quadrant logic ─────────────────────────
   function calcLagna(jd, lat, lng) {
-    // GMST at 0h UT
-    const T  = (Math.floor(jd - 0.5) + 0.5 - 2451545.0) / 36525.0;
-    const GMST0 = 100.4606184 + 36000.77004 * T + 0.000387933 * T * T;
-    // Fraction of UT day
-    const utFrac = (jd - Math.floor(jd - 0.5) - 0.5) * 24;
-    const GMST   = (GMST0 + 360.98564724 * utFrac / 24) % 360;
-    const LST    = ((GMST + lng) % 360 + 360) % 360;
-    // RAMC = LST in degrees
-    const RAMC   = LST;
-    const eps    = 23.4397 * DEG; // obliquity
-    const latRad = lat * DEG;
-    // Ascendant from RAMC
-    const y      = -Math.cos(RAMC * DEG);
-    const x      = Math.sin(RAMC * DEG) * Math.cos(eps) + Math.tan(latRad) * Math.sin(eps);
-    let   asc    = Math.atan2(y, x) * RAD;
+    const T = (jd - 2451545.0) / 36525.0;
+
+    // GMST at 0h UT of the JD day (Meeus Ch.12)
+    const JD0  = Math.floor(jd - 0.5) + 0.5; // 0h UT
+    const T0   = (JD0 - 2451545.0) / 36525.0;
+    const GMST0 = 100.4606184 + 36000.77004 * T0 + 0.000387933 * T0 * T0;
+
+    // Add UT hours
+    const utHours = (jd - JD0) * 24.0;
+    const GMST    = norm360(GMST0 + 360.98564724 * utHours / 24.0);
+
+    // Local Sidereal Time
+    const LST  = norm360(GMST + lng);
+    const RAMC = LST; // Right Ascension of Midheaven Culmination
+
+    // Obliquity of ecliptic
+    const eps  = (23.439291111 - 0.013004167*T - 0.000000164*T*T + 0.000000504*T*T*T) * DEG;
+    const latR = lat * DEG;
+    const ramcR = RAMC * DEG;
+
+    // Ascendant formula (Meeus Ch.31)
+    const y = -Math.cos(ramcR);
+    const x =  Math.sin(ramcR) * Math.cos(eps) + Math.tan(latR) * Math.sin(eps);
+    let asc = Math.atan2(y, x) * RAD;
     if (asc < 0) asc += 360;
-    // Correct quadrant
-    if (RAMC >= 0 && RAMC < 180) {
-      if (asc < 180) asc += 180;
-    } else {
-      if (asc >= 180) asc -= 180;
-    }
-    const ayanamsa = lahiriAyanamsa(jd);
-    const sidAsc   = ((asc - ayanamsa) % 360 + 360) % 360;
+
+    // Correct quadrant: ascendant must be in the right half of sky
+    if (Math.cos(ramcR) > 0 && asc < 180) asc += 180;
+    if (Math.cos(ramcR) < 0 && asc > 180) asc -= 180;
+
+    const ayan   = lahiriAyanamsa(jd);
+    const sidAsc = norm360(asc - ayan);
     return {
       longitude: sidAsc,
+      tropLon:   asc,
       rashi:     Math.floor(sidAsc / 30),
       rashiName: RASHI_NAMES[Math.floor(sidAsc / 30)],
       degree:    sidAsc % 30,
@@ -256,12 +298,10 @@
 
   // ── Houses (Whole Sign) ───────────────────────────────────────────────────
   function calcHouses(lagna) {
-    const houses = [];
-    for (let i = 0; i < 12; i++) {
-      const h = (lagna.rashi + i) % 12;
-      houses.push({ house: i + 1, rashi: h, rashiName: RASHI_NAMES[h] });
-    }
-    return houses;
+    return Array.from({length:12}, (_, i) => {
+      const r = (lagna.rashi + i) % 12;
+      return {house: i+1, rashi: r, rashiName: RASHI_NAMES[r]};
+    });
   }
 
   function getHouseOfPlanet(planet, lagnaRashi) {
@@ -269,265 +309,220 @@
   }
 
   // ── Vimshottari Dasha ─────────────────────────────────────────────────────
-  function calcDasha(moonLon, jd) {
-    const nakIdx      = Math.floor(moonLon / (360 / 27));
-    const nak         = NAKSHATRA_DATA[nakIdx];
-    const nakFraction = (moonLon % (360 / 27)) / (360 / 27);
-    const startLord   = nak.lord;
+  function calcDasha(moonSidLon, jd) {
+    const NAK_SPAN  = 360 / 27;
+    const nakIdx    = Math.floor(moonSidLon / NAK_SPAN);
+    const nak       = NAKSHATRA_DATA[nakIdx];
+    const elapsed   = (moonSidLon % NAK_SPAN) / NAK_SPAN; // fraction traversed
 
-    // Elapsed portion of this dasha at birth
-    const elapsed   = nakFraction * nak.years; // years already elapsed in current dasha
-    const remaining = nak.years - elapsed;
+    // Years already elapsed in current dasha at birth
+    const elapsedYrs   = elapsed * nak.years;
+    const remainingYrs = nak.years - elapsedYrs;
 
-    // Build full 120 year cycle starting from birth
-    const lordIdx   = DASHA_ORDER.indexOf(startLord);
-    const dashas    = [];
-    let cursor      = new Date(jdToDate(jd));
+    const lordIdx = DASHA_ORDER.indexOf(nak.lord);
+    const dashas  = [];
+    let cursor    = new Date(jdToDateStr(jd));
 
     // First partial dasha
-    const firstEnd = addYears(cursor, remaining);
     dashas.push({
-      lord:  startLord,
+      lord:  nak.lord,
       years: nak.years,
       start: fmtDate(cursor),
-      end:   fmtDate(firstEnd),
+      end:   fmtDate(addYears(cursor, remainingYrs)),
     });
-    cursor = firstEnd;
+    cursor = addYears(cursor, remainingYrs);
 
     for (let i = 1; i < DASHA_ORDER.length; i++) {
-      const idx  = (lordIdx + i) % DASHA_ORDER.length;
-      const lord = DASHA_ORDER[idx];
+      const lord = DASHA_ORDER[(lordIdx + i) % DASHA_ORDER.length];
       const yrs  = DASHA_YEARS[lord];
       const end  = addYears(cursor, yrs);
-      dashas.push({ lord, years: yrs, start: fmtDate(cursor), end: fmtDate(end) });
+      dashas.push({lord, years:yrs, start:fmtDate(cursor), end:fmtDate(end)});
       cursor = end;
     }
 
-    // Current dasha
-    const today    = new Date();
-    const current  = dashas.find(d => new Date(d.start) <= today && new Date(d.end) > today) || dashas[0];
+    const today   = new Date();
+    const current = dashas.find(d => new Date(d.start) <= today && new Date(d.end) > today) || dashas[0];
 
-    return { dashas, current, nakshatra: nak.name, nakshatraLord: nak.lord };
+    return {dashas, current, nakshatra: nak.name, nakshatraLord: nak.lord};
   }
 
   function calcAntardashas(mahadasha) {
-    const lordIdx  = DASHA_ORDER.indexOf(mahadasha.lord);
-    const total    = DASHA_YEARS[mahadasha.lord];
-    const start    = new Date(mahadasha.start);
-    const antars   = [];
-    let cursor     = new Date(start);
-
-    for (let i = 0; i < DASHA_ORDER.length; i++) {
-      const idx   = (lordIdx + i) % DASHA_ORDER.length;
-      const aLord = DASHA_ORDER[idx];
-      const days  = (DASHA_YEARS[aLord] / TOTAL_DASHA_YEARS) * total * 365.25;
-      const end   = new Date(cursor.getTime() + days * 86400000);
-      antars.push({ lord: aLord, start: fmtDate(cursor), end: fmtDate(end) });
+    const lordIdx = DASHA_ORDER.indexOf(mahadasha.lord);
+    const total   = DASHA_YEARS[mahadasha.lord];
+    let cursor    = new Date(mahadasha.start);
+    return DASHA_ORDER.map((_, i) => {
+      const lord = DASHA_ORDER[(lordIdx + i) % DASHA_ORDER.length];
+      const days = (DASHA_YEARS[lord] / TOTAL_DASHA_YEARS) * total * 365.25;
+      const end  = new Date(cursor.getTime() + days * 86400000);
+      const antar = {lord, start: fmtDate(cursor), end: fmtDate(end)};
       cursor = end;
-    }
-    return antars;
+      return antar;
+    });
   }
 
   // ── Yogas ─────────────────────────────────────────────────────────────────
   function detectYogas(planets, lagna) {
-    const yogas = [];
-    const byName = {};
-    planets.forEach(p => { byName[p.name] = p; });
+    const b = {};
+    planets.forEach(p => { b[p.name] = p; });
 
-    // Gaja Kesari: Jupiter in kendra (1,4,7,10) from Moon
-    const moonRashi = byName.Moon.rashi;
-    const jupHouse  = ((byName.Jupiter.rashi - moonRashi + 12) % 12) + 1;
-    yogas.push({
-      name: "Gaja Kesari",
-      present: [1,4,7,10].includes(jupHouse),
-      description: "Jupiter in kendra from Moon — wisdom, fame, prosperity",
-    });
+    // Gaja Kesari: Jupiter in 1,4,7,10 from Moon
+    const jupFromMoon = ((b.Jupiter.rashi - b.Moon.rashi + 12) % 12) + 1;
 
-    // Budhaditya: Sun + Mercury in same rashi
-    yogas.push({
-      name: "Budhaditya",
-      present: byName.Sun.rashi === byName.Mercury.rashi,
-      description: "Sun & Mercury conjunct — sharp intellect, eloquence",
-    });
+    // Hamsa: Jupiter in own/exalted in kendra from lagna
+    const jupFromLagna = getHouseOfPlanet(b.Jupiter, lagna.rashi);
 
-    // Hamsa Yoga: Jupiter in own/exalted in kendra from lagna
-    const jupFromLagna = getHouseOfPlanet(byName.Jupiter, lagna.rashi);
-    const jupStatus    = byName.Jupiter.status;
-    yogas.push({
-      name: "Hamsa",
-      present: [1,4,7,10].includes(jupFromLagna) && ["Exalted","Own Sign"].includes(jupStatus),
-      description: "Jupiter strong in kendra — divine grace, righteous fame",
-    });
+    // Vipreet: lords of 6,8,12 placed in 6,8,12
+    const dusthanaRashis = [5,7,11].map(i => (lagna.rashi + i) % 12);
+    const dustPlanets = planets.filter(p => dusthanaRashis.includes(p.rashi));
 
-    // Vipreet Raj Yoga: 6/8/12 lord in 6/8/12
-    const dusthanas    = [5, 7, 11]; // 0-based house indices (6,8,12)
-    const dusthanaRashis = dusthanas.map(i => (lagna.rashi + i) % 12);
-    const dusthanaPlanets = planets.filter(p => dusthanaRashis.includes(p.rashi));
-    yogas.push({
-      name: "Vipreet Raj",
-      present: dusthanaPlanets.length >= 2,
-      description: "Lords of 6/8/12 in dusthanas — rise after adversity",
-    });
-
-    // Dhana Yoga: 2nd + 11th lord conjunction or exchange
+    // Dhana: 2nd lord + 11th lord in same rashi
     const h2Rashi  = (lagna.rashi + 1) % 12;
     const h11Rashi = (lagna.rashi + 10) % 12;
-    const h2Planet  = planets.find(p => p.rashi === h2Rashi);
-    const h11Planet = planets.find(p => p.rashi === h11Rashi);
-    const dhana = h2Planet && h11Planet && h2Planet.rashi === h11Planet.rashi;
-    yogas.push({
-      name: "Dhana Yoga",
-      present: dhana,
-      description: "2nd & 11th lords together — wealth accumulation",
-    });
+    const h2Planets  = planets.filter(p => p.rashi === h2Rashi  && !["Rahu","Ketu"].includes(p.name));
+    const h11Planets = planets.filter(p => p.rashi === h11Rashi && !["Rahu","Ketu"].includes(p.name));
+    const dhana = h2Planets.some(p => h11Planets.some(q => p.rashi === q.rashi) || h2Rashi === h11Rashi);
 
-    // Kendra-Trikona Raja Yoga: kendra lord + trikona lord conjunction
+    // Kendra-Trikona Raja Yoga
     const kendraRashis  = [0,3,6,9].map(i => (lagna.rashi + i) % 12);
     const trikonaRashis = [0,4,8].map(i => (lagna.rashi + i) % 12);
     let rajaYoga = false;
-    planets.forEach(p1 => {
-      planets.forEach(p2 => {
-        if (p1.name !== p2.name && p1.rashi === p2.rashi) {
-          if (kendraRashis.includes(p1.rashi) || trikonaRashis.includes(p2.rashi)) {
+    for (let i = 0; i < planets.length; i++) {
+      for (let j = i+1; j < planets.length; j++) {
+        if (planets[i].rashi === planets[j].rashi) {
+          const r = planets[i].rashi;
+          if ((kendraRashis.includes(r) || trikonaRashis.includes(r)) && r !== lagna.rashi) {
             rajaYoga = true;
           }
         }
-      });
-    });
-    yogas.push({
-      name: "Kendra-Trikona Raja Yoga",
-      present: rajaYoga,
-      description: "Kendra & trikona lords conjunct — power, authority",
-    });
+      }
+    }
 
-    return yogas;
+    return [
+      {name:"Gaja Kesari",            present:[1,4,7,10].includes(jupFromMoon),  description:"Jupiter in kendra from Moon — wisdom, fame, prosperity"},
+      {name:"Budhaditya",             present:b.Sun.rashi === b.Mercury.rashi,   description:"Sun & Mercury conjunct — sharp intellect, eloquence"},
+      {name:"Hamsa",                  present:[1,4,7,10].includes(jupFromLagna) && ["Exalted","Own Sign"].includes(b.Jupiter.status), description:"Jupiter strong in kendra — divine grace, righteous fame"},
+      {name:"Vipreet Raj",            present:dustPlanets.length >= 2,           description:"Lords of 6/8/12 in dusthanas — rise after adversity"},
+      {name:"Dhana Yoga",             present:dhana,                             description:"2nd & 11th lords together — wealth accumulation"},
+      {name:"Kendra-Trikona Raja",    present:rajaYoga,                          description:"Kendra & trikona lords conjunct — power, authority"},
+    ];
   }
 
   // ── Doshas ────────────────────────────────────────────────────────────────
-  function detectDoshas(planets, lagna, dashaInfo) {
-    const doshas = [];
-    const byName = {};
-    planets.forEach(p => { byName[p.name] = p; });
+  function detectDoshas(planets, lagna) {
+    const b = {};
+    planets.forEach(p => { b[p.name] = p; });
 
-    // Mangal Dosha: Mars in 1,2,4,7,8,12 from lagna or Moon or Venus
-    const marsHouseFromLagna  = getHouseOfPlanet(byName.Mars, lagna.rashi);
-    const marsHouseFromMoon   = ((byName.Mars.rashi - byName.Moon.rashi + 12) % 12) + 1;
-    const marsHouseFromVenus  = ((byName.Mars.rashi - byName.Venus.rashi + 12) % 12) + 1;
-    const mangalHouses        = [1,2,4,7,8,12];
-    const mangalDosha         = mangalHouses.includes(marsHouseFromLagna)
-                              || mangalHouses.includes(marsHouseFromMoon)
-                              || mangalHouses.includes(marsHouseFromVenus);
-    doshas.push({
-      name: "Mangal Dosha",
-      present: mangalDosha,
-      description: "Mars in sensitive houses — caution in marriage matters",
-    });
+    // Mangal Dosha: Mars in 1,2,4,7,8,12 from lagna
+    const mangalHouses = [1,2,4,7,8,12];
+    const marsH = getHouseOfPlanet(b.Mars, lagna.rashi);
+    const mangal = mangalHouses.includes(marsH);
 
-    // Kaal Sarp Dosha: all planets between Rahu and Ketu axis
-    const rahuLon = byName.Rahu.longitude;
-    const ketuLon = byName.Ketu.longitude;
-    const [axisStart, axisEnd] = rahuLon < ketuLon
-      ? [rahuLon, ketuLon]
-      : [ketuLon, rahuLon];
-    const otherPlanets = planets.filter(p => !["Rahu","Ketu"].includes(p.name));
-    const allBetween   = otherPlanets.every(p => {
-      if (axisStart < axisEnd) return p.longitude > axisStart && p.longitude < axisEnd;
-      return p.longitude > axisStart || p.longitude < axisEnd;
-    });
-    doshas.push({
-      name: "Kaal Sarp",
-      present: allBetween,
-      description: "All planets hemmed between Rahu-Ketu — karmic delays, eventual rise",
-    });
+    // Kaal Sarp: all planets between Rahu-Ketu axis
+    const ra = b.Rahu.longitude;
+    const ke = b.Ketu.longitude;
+    const others = planets.filter(p => !["Rahu","Ketu"].includes(p.name));
+    const inArc = (lon, start, end) => {
+      const s = norm360(start), e = norm360(end);
+      if (s < e) return lon > s && lon < e;
+      return lon > s || lon < e;
+    };
+    const allInRaKe = others.every(p => inArc(p.longitude, ra, ke));
+    const allInKeRa = others.every(p => inArc(p.longitude, ke, ra));
+    const kaalSarp  = allInRaKe || allInKeRa;
 
-    // Pitra Dosha: Sun afflicted by Rahu/Saturn in 9th house or conjunction
-    const sunHouse      = getHouseOfPlanet(byName.Sun, lagna.rashi);
-    const rahuConjSun   = byName.Rahu.rashi === byName.Sun.rashi;
-    const saturnConjSun = byName.Saturn.rashi === byName.Sun.rashi;
-    doshas.push({
-      name: "Pitra Dosha",
-      present: (sunHouse === 9 && (rahuConjSun || saturnConjSun)) || rahuConjSun,
-      description: "Sun + Rahu/Saturn — ancestral karma, requires ritual remedies",
-    });
+    // Pitra: Sun + Rahu conjunct, or Sun in 9H with Rahu/Saturn
+    const sunH       = getHouseOfPlanet(b.Sun, lagna.rashi);
+    const pitra      = b.Rahu.rashi === b.Sun.rashi
+                    || (sunH === 9 && (b.Rahu.rashi === b.Sun.rashi || b.Saturn.rashi === b.Sun.rashi));
 
-    // Sade Sati: Saturn transiting 12th, 1st, or 2nd from Moon natal rashi
-    // Using Saturn's birth chart position as approximation
-    const satFromMoon = ((byName.Saturn.rashi - byName.Moon.rashi + 12) % 12);
-    doshas.push({
-      name: "Sade Sati",
-      present: satFromMoon === 0 || satFromMoon === 1 || satFromMoon === 11,
-      description: "Saturn near natal Moon — period of testing, growth through hardship",
-    });
+    // Sade Sati (natal chart approximation): Saturn in 12,1,2 from Moon rashi
+    const satFromMoon = (b.Saturn.rashi - b.Moon.rashi + 12) % 12;
+    const sadeSati    = satFromMoon === 0 || satFromMoon === 1 || satFromMoon === 11;
 
-    return doshas;
+    return [
+      {name:"Mangal Dosha", present:mangal,   description:"Mars in 1/2/4/7/8/12 from Lagna — caution in marriage matters"},
+      {name:"Kaal Sarp",    present:kaalSarp, description:"All planets hemmed between Rahu-Ketu — karmic delays, eventual rise"},
+      {name:"Pitra Dosha",  present:pitra,    description:"Sun afflicted by Rahu/Saturn — ancestral karma, requires ritual"},
+      {name:"Sade Sati",    present:sadeSati, description:"Saturn near natal Moon — period of testing and growth"},
+    ];
   }
 
-  // ── Navamsa (D9) ──────────────────────────────────────────────────────────
+  // ── Navamsa (D9) ─────────────────────────────────────────────────────────
   function calcNavamsa(planets) {
     return planets.map(p => {
-      const navLon  = (p.longitude * 9) % 360;
-      const navRashi = Math.floor(navLon / 30);
+      // Each rashi = 9 navamsa padas. Each pada = 3°20'.
+      // Navamsa starts: Fire→Mesh, Earth→Makar, Air→Tula, Water→Kark
+      const rashiElement = [0,2,1,3, 0,2,1,3, 0,2,1,3]; // 0=fire,1=earth,2=air,3=water
+      const navStart     = [0,9,6,3]; // mesh,makar,tula,kark (rashi index)
+      const padaSize     = 30 / 9;    // 3.333°
+      const padas        = Math.floor(p.longitude / padaSize); // 0-107
+      const rashiPada    = padas % 9;
+      const birthRashi   = Math.floor(p.longitude / 30);
+      const elem         = rashiElement[birthRashi];
+      const navRashi     = (navStart[elem] + rashiPada) % 12;
       return {
         name:      p.name,
         abbr:      p.abbr,
         rashi:     navRashi,
         rashiName: RASHI_NAMES[navRashi],
-        degree:    navLon % 30,
-        longitude: navLon,
+        degree:    (p.longitude % padaSize) / padaSize * 30,
+        longitude: navRashi * 30 + (p.longitude % padaSize) / padaSize * 30,
       };
     });
   }
 
   // ── Predictions ───────────────────────────────────────────────────────────
-  function generatePredictions(planets, lagna, yogas, dashaInfo) {
-    const byName = {};
-    planets.forEach(p => { byName[p.name] = p; });
+  function generatePredictions(planets, lagna, yogas) {
+    const b = {};
+    planets.forEach(p => { b[p.name] = p; });
 
-    const lagnaName = lagna.rashiName;
-    const sunHouse  = getHouseOfPlanet(byName.Sun, lagna.rashi);
-    const jupHouse  = getHouseOfPlanet(byName.Jupiter, lagna.rashi);
-    const moonHouse = getHouseOfPlanet(byName.Moon, lagna.rashi);
-    const venHouse  = getHouseOfPlanet(byName.Venus, lagna.rashi);
+    const sunH = getHouseOfPlanet(b.Sun, lagna.rashi);
+    const jupH = getHouseOfPlanet(b.Jupiter, lagna.rashi);
+    const venH = getHouseOfPlanet(b.Venus, lagna.rashi);
+    const moonH = getHouseOfPlanet(b.Moon, lagna.rashi);
 
-    const careerHints = {
-      1: "leadership, self-employment", 2: "finance, banking", 3: "communication, media",
-      4: "real estate, education", 5: "speculation, creative fields", 6: "service, medicine",
-      7: "business partnerships, trade", 8: "research, occult", 9: "law, religion, academics",
-      10: "government, management", 11: "networking, gains", 12: "foreign lands, spirituality",
+    const careerMap = {
+      1:"leadership, self-employment, politics",
+      2:"finance, banking, speech",
+      3:"media, writing, communication",
+      4:"real estate, education, vehicles",
+      5:"speculation, creative arts, children",
+      6:"service, medicine, law",
+      7:"business partnerships, trade",
+      8:"research, occult, insurance",
+      9:"law, religion, academics, foreign travel",
+      10:"government, management, profession",
+      11:"networking, gains, elder siblings",
+      12:"foreign lands, spirituality, hospitals",
     };
 
     return {
-      career: `With ${lagnaName} lagna and Sun in the ${sunHouse}th house (${careerHints[sunHouse] || "diverse fields"}), your strength lies in ${jupHouse <= 6 ? "professional growth and leadership" : "wisdom-driven endeavors"}. Jupiter's placement indicates ${byName.Jupiter.status === "Exalted" ? "exceptional professional fortune" : "steady career progress"}.`,
-      marriage: `Venus in the ${venHouse}th house ${byName.Venus.status === "Exalted" ? "strongly blessed" : venHouse === 7 ? "directly influencing" : "influencing"} marriage. ${byName.Saturn.rashi === byName.Venus.rashi ? "Saturn's aspect suggests delays; marriage after 28 is favorable." : "Marriage prospects are generally positive."} Moon in ${byName.Moon.rashiName} indicates ${moonHouse <= 6 ? "early emotional bonding" : "mature emotional depth in relationships"}.`,
-      health: `${lagnaName} lagna natives should watch ${["Aries","Scorpio"].includes(lagnaName) ? "head and blood pressure" : ["Taurus","Libra"].includes(lagnaName) ? "throat and kidneys" : ["Gemini","Virgo"].includes(lagnaName) ? "lungs and nervous system" : ["Cancer","Pisces"].includes(lagnaName) ? "digestive system and lymph" : ["Leo"].includes(lagnaName) ? "heart and spine" : "joints and bones"}. ${byName.Saturn.status === "Exalted" ? "Saturn well-placed helps longevity." : "Regular wellness routines are recommended."}`,
+      career: `${lagna.rashiName} lagna with Sun in ${sunH}th house (${careerMap[sunH]}) indicates strong aptitude in these fields. Jupiter in ${jupH}th house ${b.Jupiter.status === "Exalted" ? "is exalted bringing exceptional fortune" : b.Jupiter.status === "Own Sign" ? "in own sign gives steady growth" : "gives gradual career progress"}.`,
+      marriage: `Venus in ${venH}th house (${b.Venus.rashiName}) ${b.Venus.status === "Exalted" ? "is exalted — excellent for marriage prospects" : b.Venus.status === "Debilitated" ? "is debilitated — marriage requires patience and understanding" : "gives balanced relationship prospects"}. ${b.Saturn.rashi === b.Venus.rashi ? "Saturn conjunct Venus may delay marriage — patience after age 28 is advised." : ""} Moon in ${b.Moon.rashiName} in ${moonH}th house reflects ${moonH <= 4 ? "nurturing, family-oriented" : moonH <= 8 ? "emotionally expressive" : "spiritually inclined"} nature in relationships.`,
+      health: `${lagna.rashiName} lagna: Watch your ${({Mesh:"head, blood pressure",Vrishabh:"throat, neck, thyroid",Mithun:"lungs, nervous system, arms",Kark:"stomach, chest, digestion",Simha:"heart, spine, eyes",Kanya:"intestines, digestive system",Tula:"kidneys, lower back",Vrishchik:"reproductive organs, urinary",Dhanu:"hips, thighs, liver",Makar:"knees, bones, joints",Kumbh:"ankles, circulatory system",Meen:"feet, lymphatic system"})[lagna.rashiName] || "overall health"}. ${b.Saturn.status === "Exalted" || b.Saturn.status === "Own Sign" ? "Strong Saturn supports longevity." : "Regular health checkups recommended."}`,
       remedies: generateRemedies(planets, lagna),
     };
   }
 
   function generateRemedies(planets, lagna) {
-    const remedies = [];
-    planets.forEach(p => {
-      if (p.status === "Debilitated") {
-        const rem = {
-          Sun:     "Offer water to the Sun at sunrise; recite Aditya Hridayam",
-          Moon:    "Wear pearl; offer milk to Shiva on Mondays",
-          Mars:    "Recite Hanuman Chalisa on Tuesdays; donate red items",
-          Mercury: "Wear emerald; donate green items on Wednesdays",
-          Jupiter: "Wear yellow sapphire; worship Brihaspati on Thursdays",
-          Venus:   "Wear diamond or white sapphire; worship Lakshmi on Fridays",
-          Saturn:  "Light sesame oil lamp on Saturdays; recite Shani Stotra",
-          Rahu:    "Donate blue items on Saturdays; worship Durga",
-          Ketu:    "Donate multi-colored blankets; worship Ganesha",
-        };
-        if (rem[p.name]) remedies.push(`${p.name} (Debilitated): ${rem[p.name]}`);
-      }
-    });
-    if (remedies.length === 0) remedies.push("No major planetary weaknesses detected. Continue regular worship and charitable activities.");
-    return remedies;
+    const remMap = {
+      Sun:     "Offer water to Sun at sunrise daily; recite Aditya Hridayam on Sundays; donate wheat/copper",
+      Moon:    "Wear pearl in silver on right hand; offer milk to Lord Shiva on Mondays; respect mother",
+      Mars:    "Recite Hanuman Chalisa on Tuesdays; donate red lentils; worship Lord Hanuman",
+      Mercury: "Wear emerald in gold; donate green moong dal on Wednesdays; worship Lord Vishnu",
+      Jupiter: "Wear yellow sapphire; worship Brihaspati on Thursdays; donate yellow items",
+      Venus:   "Wear diamond or white sapphire; worship Goddess Lakshmi on Fridays; donate white items",
+      Saturn:  "Light sesame oil lamp under Peepal tree on Saturdays; recite Shani Stotra; donate black sesame",
+      Rahu:    "Donate blue/black items on Saturdays; worship Goddess Durga; recite Rahu mantra",
+      Ketu:    "Donate multi-colored items; worship Lord Ganesha; recite Ketu mantra",
+    };
+    const debilitated = planets.filter(p => p.status === "Debilitated");
+    if (!debilitated.length) return ["No major planetary weaknesses detected. Continue regular worship and charitable activities for overall wellbeing."];
+    return debilitated.map(p => `${p.name} (Debilitated in ${p.rashiName}): ${remMap[p.name]}`);
   }
 
-  // ── Utility ───────────────────────────────────────────────────────────────
-  function jdToDate(jd) {
+  // ── Utilities ─────────────────────────────────────────────────────────────
+  function jdToDateStr(jd) {
     const z = Math.floor(jd + 0.5);
     const f = jd + 0.5 - z;
     let A = z;
@@ -542,17 +537,13 @@
     const day   = B - D - Math.floor(30.6001 * E);
     const month = E < 14 ? E - 1 : E - 13;
     const year  = month > 2 ? C - 4716 : C - 4715;
-    const hour  = f * 24;
-    const hh    = Math.floor(hour);
-    const mm    = Math.floor((hour - hh) * 60);
     return `${year}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
   }
 
   function addYears(date, years) {
-    const d   = new Date(date);
-    const frac = years - Math.floor(years);
-    d.setFullYear(d.getFullYear() + Math.floor(years));
-    d.setDate(d.getDate() + Math.round(frac * 365.25));
+    const d = new Date(date instanceof Date ? date.getTime() : date);
+    const days = years * 365.25;
+    d.setTime(d.getTime() + days * 86400000);
     return d;
   }
 
@@ -561,40 +552,25 @@
     return dt.toISOString().split("T")[0];
   }
 
-  // ── Main export ───────────────────────────────────────────────────────────
+  // ── Main Export ───────────────────────────────────────────────────────────
   function calculate(birthData) {
     const jd      = jdFromBirthData(birthData);
+    const ayanamsa = lahiriAyanamsa(jd);
     const planets = getAllPlanets(jd);
-    const lagna   = calcLagna(jd, birthData.lat, birthData.lng);
+    const lagna   = calcLagna(jd, Number(birthData.lat), Number(birthData.lng));
     const houses  = calcHouses(lagna);
 
-    // Add house number to each planet
-    planets.forEach(p => {
-      p.house = getHouseOfPlanet(p, lagna.rashi);
-    });
+    planets.forEach(p => { p.house = getHouseOfPlanet(p, lagna.rashi); });
 
-    const moonPlanet  = planets.find(p => p.name === "Moon");
-    const dashaInfo   = calcDasha(moonPlanet.longitude, jd);
-    const antardashas = calcAntardashas(dashaInfo.current);
-    const yogas       = detectYogas(planets, lagna);
-    const doshas      = detectDoshas(planets, lagna, dashaInfo);
-    const navamsa     = calcNavamsa(planets);
-    const predictions = generatePredictions(planets, lagna, yogas, dashaInfo);
+    const moon       = planets.find(p => p.name === "Moon");
+    const dasha      = calcDasha(moon.longitude, jd);
+    const antardashas = calcAntardashas(dasha.current);
+    const yogas      = detectYogas(planets, lagna);
+    const doshas     = detectDoshas(planets, lagna);
+    const navamsa    = calcNavamsa(planets);
+    const predictions = generatePredictions(planets, lagna, yogas);
 
-    return {
-      birthData,
-      jd,
-      ayanamsa: lahiriAyanamsa(jd),
-      lagna,
-      planets,
-      houses,
-      dasha:      dashaInfo,
-      antardashas,
-      yogas,
-      doshas,
-      navamsa,
-      predictions,
-    };
+    return {birthData, jd, ayanamsa, lagna, planets, houses, dasha, antardashas, yogas, doshas, navamsa, predictions};
   }
 
   window.KundaliEngine = { calculate };
