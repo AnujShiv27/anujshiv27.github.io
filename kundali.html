@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Free Kundali / Janampatri Calculator by Astroserves. Get your Vedic birth chart, dashas, yogas, and predictions online — no signup required." />
+  <title>Free Kundali | Astroserves by Acharya Anuj</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.4/css/all.min.css" integrity="sha512-g7y+NBTzsnsv+9cy2U4in8kgkGOnmgh0qbaQrmZxBmtCqzcb5ygcUSIk1CgKfDM2x8fIKQGbgY8y4GmZ2QgK9A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── Page Layout ── */
+    .kundali-hero {
+      background: radial-gradient(circle at 50% 0%, rgba(243,200,93,.15), transparent 55%);
+      padding: 3rem 0 1.5rem;
+      text-align: center;
+    }
+    .kundali-hero h1 { font-family:"Playfair Display",serif; font-size:clamp(2rem,4vw,3rem); margin:.5rem 0; }
+    .kundali-hero h1 span { color: var(--gold); }
+    .kundali-hero p { color: var(--muted); max-width:560px; margin:.5rem auto 0; }
+
+    .kundali-grid { display:grid; gap:2rem; padding:2rem 0; }
+
+    /* ── Card ── */
+    .k-card {
+      background: rgba(255,247,229,.06);
+      border: 1px solid rgba(243,200,93,.18);
+      border-radius: 1rem;
+      padding: 1.8rem 2rem;
+    }
+    .k-card h2 {
+      font-family:"Playfair Display",serif;
+      font-size:1.3rem;
+      color:var(--gold);
+      margin:0 0 1.2rem;
+      display:flex;
+      align-items:center;
+      gap:.6rem;
+    }
+    .k-card h2 i { font-size:1.1rem; color:var(--saffron); }
+
+    /* ── Form ── */
+    .form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; }
+    .form-group { display:flex; flex-direction:column; gap:.35rem; }
+    .form-group label { font-size:.82rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+    .form-group input, .form-group select {
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(243,200,93,.25);
+      border-radius:.5rem;
+      color: var(--text);
+      padding:.6rem .85rem;
+      font-size:.95rem;
+      outline:none;
+      transition:border-color .2s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color:var(--gold); }
+    .form-group select option { background:#1a0a14; }
+    .btn-generate {
+      margin-top:1.5rem;
+      display:block;
+      width:100%;
+      padding:.9rem;
+      border:none;
+      border-radius:.6rem;
+      font-size:1.05rem;
+      font-weight:700;
+      cursor:pointer;
+      background:linear-gradient(135deg,#f3c85d,#d9812b);
+      color:#1a0a0a;
+      letter-spacing:.04em;
+      transition:opacity .2s,transform .15s;
+    }
+    .btn-generate:hover { opacity:.9; transform:translateY(-1px); }
+    .btn-generate:disabled { opacity:.5; cursor:not-allowed; }
+
+    /* ── Charts Row ── */
+    .charts-row { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+    @media(max-width:700px){ .charts-row{ grid-template-columns:1fr; } }
+    .chart-wrap { text-align:center; }
+    .chart-wrap h3 { color:var(--gold); font-size:1rem; margin-bottom:.75rem; font-family:"Playfair Display",serif; }
+    .chart-wrap svg { max-width:100%; border-radius:.5rem; }
+
+    /* ── Table ── */
+    .k-table-wrap { overflow-x:auto; }
+    table.k-table { width:100%; border-collapse:collapse; font-size:.88rem; }
+    table.k-table th {
+      background:rgba(243,200,93,.15);
+      color:var(--gold);
+      text-align:left;
+      padding:.65rem .9rem;
+      font-weight:600;
+      white-space:nowrap;
+    }
+    table.k-table td { padding:.6rem .9rem; border-bottom:1px solid rgba(255,255,255,.05); color:var(--text); }
+    table.k-table tr:nth-child(even) td { background:rgba(255,255,255,.03); }
+    .badge {
+      display:inline-block;
+      padding:.2rem .55rem;
+      border-radius:.3rem;
+      font-size:.75rem;
+      font-weight:600;
+    }
+    .badge-exalted    { background:rgba(80,220,120,.18); color:#5ddc86; }
+    .badge-debilitated{ background:rgba(220,80,80,.18);  color:#dc6060; }
+    .badge-own        { background:rgba(93,200,243,.18); color:#5dc8f3; }
+    .badge-neutral    { background:rgba(255,255,255,.08); color:var(--muted); }
+
+    /* ── Dasha ── */
+    .dasha-current {
+      border:1.5px solid var(--gold);
+      border-radius:.75rem;
+      padding:1rem 1.4rem;
+      margin-bottom:1.5rem;
+      display:flex;
+      flex-wrap:wrap;
+      gap:1rem;
+      align-items:center;
+    }
+    .dasha-current .lord-name { font-size:1.5rem; font-family:"Playfair Display",serif; color:var(--gold); }
+    .dasha-dates { font-size:.85rem; color:var(--muted); }
+    .dasha-bar-wrap { margin:1rem 0; }
+    .dasha-bar-label { font-size:.8rem; color:var(--muted); margin-bottom:.35rem; }
+    .dasha-bar { height:8px; background:rgba(255,255,255,.1); border-radius:4px; overflow:hidden; }
+    .dasha-bar-fill { height:100%; background:linear-gradient(90deg,#f3c85d,#d9812b); border-radius:4px; transition:width .8s ease; }
+
+    /* ── Yogas/Doshas ── */
+    .yd-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+    @media(max-width:640px){ .yd-grid{ grid-template-columns:1fr; } }
+    .yd-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.8rem; }
+    .yd-item {
+      background:rgba(255,255,255,.04);
+      border-radius:.6rem;
+      padding:.8rem 1rem;
+      border-left:3px solid transparent;
+    }
+    .yd-item.present  { border-color:var(--gold); }
+    .yd-item.absent   { border-color:rgba(255,255,255,.12); opacity:.65; }
+    .yd-item-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.3rem; }
+    .yd-name { font-weight:600; font-size:.92rem; }
+    .yd-desc { font-size:.78rem; color:var(--muted); line-height:1.5; }
+    .status-pill {
+      font-size:.7rem; font-weight:700; padding:.15rem .5rem; border-radius:1rem;
+    }
+    .status-present { background:rgba(93,220,120,.2); color:#5ddc86; }
+    .status-absent  { background:rgba(255,255,255,.08); color:var(--muted); }
+    .status-warn    { background:rgba(255,180,50,.2); color:#ffb432; }
+
+    /* ── Predictions ── */
+    .pred-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem; }
+    .pred-card {
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:.75rem;
+      padding:1rem 1.2rem;
+    }
+    .pred-card h4 { color:var(--gold); margin:0 0 .5rem; font-size:.9rem; display:flex; align-items:center; gap:.4rem; }
+    .pred-card p  { font-size:.85rem; color:var(--muted); line-height:1.6; margin:0; }
+    .remedies-list { list-style:none; padding:0; margin:.8rem 0 0; display:flex; flex-direction:column; gap:.5rem; }
+    .remedies-list li { font-size:.83rem; color:var(--muted); display:flex; gap:.5rem; }
+    .remedies-list li::before { content:"◈"; color:var(--saffron); flex-shrink:0; }
+
+    /* ── PDF button ── */
+    .btn-pdf {
+      display:inline-flex; align-items:center; gap:.6rem;
+      background:rgba(243,200,93,.12);
+      border:1.5px solid var(--gold);
+      color:var(--gold);
+      padding:.75rem 1.5rem;
+      border-radius:.6rem;
+      font-weight:600;
+      font-size:.95rem;
+      cursor:pointer;
+      transition:background .2s;
+    }
+    .btn-pdf:hover { background:rgba(243,200,93,.22); }
+
+    /* ── Result wrapper hidden by default ── */
+    #kundaliResult { display:none; }
+    #kundaliResult.visible { display:block; }
+
+    /* ── Loading ── */
+    .k-loading { text-align:center; padding:2rem; color:var(--muted); }
+    .k-loading i { font-size:2rem; animation:spin 1.2s linear infinite; color:var(--gold); }
+    @keyframes spin { to{ transform:rotate(360deg); } }
+
+    /* ── Mobile nav ── */
+    @media(max-width:768px){
+      .nav-links{ display:none; flex-direction:column; position:absolute; top:100%; left:0; right:0; background:rgba(9,2,8,.97); padding:1rem; gap:1rem; }
+      .nav-links.open{ display:flex; }
+      .nav-toggle{ display:block; }
+    }
+    .topbar{ position:sticky; top:0; z-index:100; backdrop-filter:blur(14px); background:rgba(9,2,8,.65); border-bottom:1px solid rgba(255,255,255,.05); }
+    .navbar{ display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem 0; position:relative; }
+  </style>
+</head>
+<body>
+
+<!-- Sticky navigation -->
+<header class="topbar">
+  <nav class="navbar container">
+    <a href="index.html" class="brand">
+      <span class="brand-icon">ॐ</span>
+      <span>Astroserves <strong>by Anuj</strong></span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('open')">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html#home"         class="nav-link">Home</a>
+      <a href="index.html#about"        class="nav-link">About</a>
+      <a href="index.html#services"     class="nav-link">Services</a>
+      <a href="index.html#why"          class="nav-link">Why Us</a>
+      <a href="index.html#testimonials" class="nav-link">Testimonials</a>
+      <a href="index.html#gallery"      class="nav-link">Gallery</a>
+      <a href="index.html#posts"        class="nav-link">Posts</a>
+      <a href="kundali.html"            class="nav-link active">Free Kundali</a>
+      <a href="index.html#contact"      class="nav-link">Contact</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <!-- Hero -->
+  <section class="kundali-hero">
+    <div class="container">
+      <p class="eyebrow"><i class="fas fa-star" style="color:var(--gold)"></i> Vedic Astrology</p>
+      <h1>Free <span>Kundali</span> Calculator</h1>
+      <p>Generate your complete Vedic birth chart — planets, dashas, yogas, doshas & predictions. Powered by Lahiri Ayanamsa.</p>
+    </div>
+  </section>
+
+  <div class="container kundali-grid">
+
+    <!-- Birth Details Form -->
+    <div class="k-card">
+      <h2><i class="fas fa-user-circle"></i> Birth Details</h2>
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:span 2">
+          <label>Full Name</label>
+          <input type="text" id="bd-name" placeholder="Enter full name" />
+        </div>
+        <div class="form-group">
+          <label>Date of Birth</label>
+          <input type="date" id="bd-date" />
+        </div>
+        <div class="form-group">
+          <label>Time of Birth</label>
+          <input type="time" id="bd-time" />
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label>City Name (for reference)</label>
+          <input type="text" id="bd-city" placeholder="e.g. New Delhi" />
+        </div>
+        <div class="form-group">
+          <label>Latitude</label>
+          <input type="number" id="bd-lat" step="0.0001" placeholder="28.6139" />
+        </div>
+        <div class="form-group">
+          <label>Longitude</label>
+          <input type="number" id="bd-lng" step="0.0001" placeholder="77.2090" />
+        </div>
+        <div class="form-group">
+          <label>Timezone (UTC offset)</label>
+          <select id="bd-tz">
+            <option value="5.5" selected>IST +5:30 (India)</option>
+            <option value="5.75">NPT +5:45 (Nepal)</option>
+            <option value="6">BST +6:00 (Bangladesh)</option>
+            <option value="5">PKT +5:00 (Pakistan)</option>
+            <option value="0">UTC +0:00</option>
+            <option value="1">CET +1:00</option>
+            <option value="2">EET +2:00</option>
+            <option value="3">MSK +3:00</option>
+            <option value="4">GST +4:00 (Gulf)</option>
+            <option value="8">CST +8:00 (China/Singapore)</option>
+            <option value="9">JST +9:00 (Japan)</option>
+            <option value="10">AEST +10:00 (Australia East)</option>
+            <option value="-5">EST -5:00 (US East)</option>
+            <option value="-6">CST -6:00 (US Central)</option>
+            <option value="-7">MST -7:00 (US Mountain)</option>
+            <option value="-8">PST -8:00 (US Pacific)</option>
+            <option value="-4.5">VET -4:30 (Venezuela)</option>
+            <option value="-3">BRT -3:00 (Brazil)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-generate" id="btnGenerate" onclick="generateKundali()">
+        <i class="fas fa-om"></i> Generate Kundali
+      </button>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="kundaliLoading" style="display:none">
+      <div class="k-loading"><i class="fas fa-circle-notch"></i><p>Calculating planetary positions…</p></div>
+    </div>
+
+    <!-- All Results -->
+    <div id="kundaliResult">
+
+      <!-- Charts Row -->
+      <div class="k-card">
+        <h2><i class="fas fa-chart-pie"></i> Birth Charts</h2>
+        <div class="charts-row">
+          <div class="chart-wrap">
+            <h3>Lagna Chart (D1)</h3>
+            <div id="lagnaChartContainer"></div>
+          </div>
+          <div class="chart-wrap">
+            <h3>Navamsa Chart (D9)</h3>
+            <div id="navamsaChartContainer"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Planetary Positions Table -->
+      <div class="k-card">
+        <h2><i class="fas fa-globe"></i> Planetary Positions</h2>
+        <div class="k-table-wrap">
+          <table class="k-table" id="planetsTable">
+            <thead>
+              <tr>
+                <th>Planet</th>
+                <th>Rashi</th>
+                <th>Degree</th>
+                <th>House</th>
+                <th>Nakshatra</th>
+                <th>Pada</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="planetsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Vimshottari Dasha -->
+      <div class="k-card">
+        <h2><i class="fas fa-clock"></i> Vimshottari Dasha</h2>
+        <div class="dasha-current" id="dashaCurrentBox">
+          <!-- filled by JS -->
+        </div>
+        <div class="dasha-bar-wrap">
+          <div class="dasha-bar-label" id="dashaBarLabel"></div>
+          <div class="dasha-bar"><div class="dasha-bar-fill" id="dashaBarFill" style="width:0%"></div></div>
+        </div>
+        <h3 style="color:var(--gold);font-size:1rem;margin:1.2rem 0 .6rem;font-family:'Playfair Display',serif">Antardasha (Sub-periods)</h3>
+        <div class="k-table-wrap">
+          <table class="k-table" id="antardashaTable">
+            <thead><tr><th>Sub-lord</th><th>Start Date</th><th>End Date</th></tr></thead>
+            <tbody id="antardashaBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Yogas & Doshas -->
+      <div class="k-card">
+        <h2><i class="fas fa-yin-yang"></i> Yogas &amp; Doshas</h2>
+        <div class="yd-grid">
+          <div>
+            <h3 style="color:var(--gold);font-size:.95rem;margin:0 0 .8rem;font-family:inherit">Yogas</h3>
+            <ul class="yd-list" id="yogasList"></ul>
+          </div>
+          <div>
+            <h3 style="color:var(--saffron);font-size:.95rem;margin:0 0 .8rem;font-family:inherit">Doshas</h3>
+            <ul class="yd-list" id="doshasList"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Predictions -->
+      <div class="k-card">
+        <h2><i class="fas fa-star-and-crescent"></i> Predictions &amp; Remedies</h2>
+        <div class="pred-grid" id="predictionsGrid"></div>
+      </div>
+
+      <!-- PDF Export -->
+      <div class="k-card" style="text-align:center">
+        <h2 style="justify-content:center"><i class="fas fa-file-pdf"></i> Download Report</h2>
+        <p style="color:var(--muted);font-size:.9rem;margin-bottom:1.2rem">Get a printable PDF of your complete Kundali report</p>
+        <button class="btn-pdf" onclick="downloadPDF()">
+          <i class="fas fa-download"></i> Download PDF Report
+        </button>
+      </div>
+
+    </div><!-- /kundaliResult -->
+  </div><!-- /kundali-grid -->
+</main>
+
+<!-- Footer simple -->
+<footer style="text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.8rem;border-top:1px solid rgba(255,255,255,.05);margin-top:3rem">
+  © 2025 Astroserves by Acharya Anuj &nbsp;·&nbsp; Vedic astrology calculations use Lahiri Ayanamsa
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="kundali-engine.js"></script>
+<script>
+// ── North Indian Chart SVG renderer ──────────────────────────────────────────
+// Houses map for classic North Indian diamond chart:
+// House layout (number = house index 1-12):
+//       12 | 1 | 2
+//      11  |   |  3
+//       10 | 9 | 8   (middle row corners)
+//          | 7 |
+// Proper North Indian:
+//  [12][1][2]
+//  [11]   [3]
+//  [10][9][8]  wait...
+// Standard North Indian positional grid (3x3 cells forming diamond):
+// Col:   0     1     2
+// Row 0: H12   H1    H2
+// Row 1: H11   (mid) H3
+// Row 2: H10   H9    H8  (bottom row: 10,9,8 — but 4 houses in corners & 4 in sides)
+// Actually North Indian uses 4 triangular cells per row in a specific layout.
+// We'll use a faithful SVG-based diamond layout.
+
+const NI_CELLS = [
+  // [houseNum, polygon points as fractions of 480x480]
+  // 12 triangular/trapezoidal cells in North Indian chart
+  // Chart divided as: 4 corner triangles + 4 side diamonds + 1 center diamond split into 4
+  // House positions (standard):
+  //   Top-left corner    = H12
+  //   Top triangle       = H1  (lagna)
+  //   Top-right corner   = H2
+  //   Right triangle     = H3
+  //   Bottom-right corner= H4
+  //   Bottom triangle    = H5 (wait — varies by tradition)
+  // Using a common layout:
+  //        H12 | H1 | H2
+  //        H11 | H4 | H3   <- center cell = H4? No...
+  //        H10 | H7 | H4
+  //
+  // Let me use the definitive standard:
+  // Top-left=12, Top-center=1, Top-right=2
+  // Left-center=11, Center=blank(split into L1 L2), Right-center=3
+  // Bottom-left=10, Bottom-center=7, Bottom-right=4 ... doesn't work for 12.
+  //
+  // Correct North Indian 12-cell diamond:
+  // Using SVG polygons for a 480x480 grid
+  { h: 1,  pts: "240,0 480,0 360,120 240,120 120,120" },   // top triangle → H1
+  { h: 2,  pts: "480,0 480,240 360,120" },                  // top-right
+  { h: 3,  pts: "480,240 480,480 360,360 360,120" },        // right
+  { h: 4,  pts: "480,480 240,480 360,360" },                // bottom-right
+  { h: 5,  pts: "240,480 0,480 120,360 240,360 360,360" },  // bottom triangle
+  { h: 6,  pts: "0,480 0,240 120,360" },                    // bottom-left
+  { h: 7,  pts: "0,240 0,0 120,120 120,360" },              // left
+  { h: 8,  pts: "0,0 240,0 120,120" },                      // top-left
+  { h: 9,  pts: "120,120 240,120 240,240" },                // inner top-left
+  { h: 10, pts: "240,120 360,120 240,240" },                // inner top-right
+  { h: 11, pts: "360,120 360,360 240,240" },                // inner right
+  { h: 12, pts: "120,120 120,360 240,240" },                // inner left (actually H12? let me recheck)
+];
+
+// Correct house-to-cell mapping for North Indian chart (standard):
+// The inner diamond is split into 4 triangles forming houses 9-12 (center quadrant)
+// Outer cells:
+// H1=top, H2=top-right corner, H3=right side, H4=bottom-right, H5=bottom, H6=bottom-left, H7=left, H8=top-left
+// Inner 4: H9=inner-top, H10=inner-right, H11=inner-bottom, H12=inner-left
+
+const NORTH_INDIAN_CELLS = [
+  { h:1,  pts:"240,0 480,0 360,120 120,120",       cx:240, cy:55  },
+  { h:2,  pts:"480,0 480,240 360,120",              cx:418, cy:108 },
+  { h:3,  pts:"480,240 480,480 360,360 360,120",    cx:418, cy:305 },
+  { h:4,  pts:"480,480 240,480 360,360",            cx:418, cy:432 },
+  { h:5,  pts:"240,480 0,480 120,360 360,360",      cx:240, cy:432 },
+  { h:6,  pts:"0,480 0,240 120,360",                cx:62,  cy:432 },
+  { h:7,  pts:"0,240 0,0 120,120 120,360",          cx:62,  cy:305 },
+  { h:8,  pts:"0,0 240,0 120,120",                  cx:62,  cy:108 },
+  { h:9,  pts:"120,120 240,120 240,240",            cx:173, cy:162 },
+  { h:10, pts:"240,120 360,120 240,240",            cx:307, cy:162 },
+  { h:11, pts:"360,120 360,360 240,240",            cx:335, cy:240 },
+  { h:12, pts:"120,120 120,360 240,240",            cx:145, cy:240 },
+];
+
+function buildNIChart(planets, lagnaRashi, navamsa) {
+  const size = 480;
+  const isPlanets = !!planets; // false = navamsa mode
+
+  // Build house→planets map
+  const houseMap = {};
+  const source = planets || navamsa;
+  source.forEach(p => {
+    const h = planets ? p.house : ((p.rashi - lagnaRashi + 12) % 12 + 1);
+    if (!houseMap[h]) houseMap[h] = [];
+    houseMap[h].push(p.abbr);
+  });
+
+  let svg = `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" style="background:#090208;border:1px solid rgba(243,200,93,.25);border-radius:8px">`;
+
+  NORTH_INDIAN_CELLS.forEach(cell => {
+    const isLagna = cell.h === 1;
+    svg += `<polygon points="${cell.pts}" fill="${isLagna ? 'rgba(243,200,93,.08)' : 'rgba(255,255,255,.025)'}" stroke="rgba(243,200,93,.35)" stroke-width="1.5"/>`;
+    // House number
+    svg += `<text x="${cell.cx}" y="${cell.cy}" text-anchor="middle" dominant-baseline="middle" fill="rgba(215,195,163,.45)" font-size="11" font-family="Montserrat,sans-serif">${cell.h}</text>`;
+    // Lagna marker
+    if (isLagna) {
+      svg += `<text x="${cell.cx}" y="${cell.cy + 15}" text-anchor="middle" fill="rgba(243,200,93,.6)" font-size="10" font-family="Montserrat,sans-serif">Lg</text>`;
+    }
+    // Planets
+    const planetsInHouse = houseMap[cell.h] || [];
+    planetsInHouse.forEach((abbr, idx) => {
+      const py = cell.cy + 14 + (isLagna ? 10 : 0) + idx * 16;
+      svg += `<text x="${cell.cx}" y="${py}" text-anchor="middle" dominant-baseline="middle" fill="#f3c85d" font-size="13" font-weight="700" font-family="Montserrat,sans-serif">${abbr}</text>`;
+    });
+  });
+
+  svg += `</svg>`;
+  return svg;
+}
+
+// ── Main Kundali Generator ─────────────────────────────────────────────────
+let lastResult = null;
+
+function generateKundali() {
+  const name = document.getElementById("bd-name").value.trim() || "Native";
+  const date = document.getElementById("bd-date").value;
+  const time = document.getElementById("bd-time").value || "12:00";
+  const lat  = parseFloat(document.getElementById("bd-lat").value)  || 28.6139;
+  const lng  = parseFloat(document.getElementById("bd-lng").value)  || 77.2090;
+  const tz   = parseFloat(document.getElementById("bd-tz").value);
+
+  if (!date) { alert("Please enter date of birth."); return; }
+
+  document.getElementById("btnGenerate").disabled = true;
+  document.getElementById("kundaliLoading").style.display = "block";
+  document.getElementById("kundaliResult").classList.remove("visible");
+
+  setTimeout(() => {
+    try {
+      const result = KundaliEngine.calculate({ name, date, time, lat, lng, timezone: tz });
+      lastResult = result;
+      renderResult(result);
+    } catch(e) {
+      alert("Error calculating chart: " + e.message);
+      console.error(e);
+    }
+    document.getElementById("kundaliLoading").style.display = "none";
+    document.getElementById("btnGenerate").disabled = false;
+  }, 50);
+}
+
+function renderResult(r) {
+  // Charts
+  document.getElementById("lagnaChartContainer").innerHTML = buildNIChart(r.planets, r.lagna.rashi, null);
+  document.getElementById("navamsaChartContainer").innerHTML = buildNIChart(null, r.lagna.rashi, r.navamsa);
+
+  // Planets table
+  const pb = document.getElementById("planetsBody");
+  pb.innerHTML = "";
+  r.planets.forEach(p => {
+    const statusClass = {
+      "Exalted":     "badge-exalted",
+      "Debilitated": "badge-debilitated",
+      "Own Sign":    "badge-own",
+      "Neutral":     "badge-neutral",
+    }[p.status] || "badge-neutral";
+    pb.innerHTML += `<tr>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.rashiName}</td>
+      <td>${p.degree.toFixed(2)}°</td>
+      <td>${p.house}</td>
+      <td>${p.nakshatra}</td>
+      <td>${p.pada}</td>
+      <td><span class="badge ${statusClass}">${p.status}</span></td>
+    </tr>`;
+  });
+  // Add Lagna row
+  pb.innerHTML = `<tr style="background:rgba(243,200,93,.07)">
+    <td><strong>Lagna</strong></td>
+    <td>${r.lagna.rashiName}</td>
+    <td>${r.lagna.degree.toFixed(2)}°</td>
+    <td>1</td><td>—</td><td>—</td><td><span class="badge badge-exalted">Ascendant</span></td>
+  </tr>` + pb.innerHTML;
+
+  // Dasha
+  const cur = r.dasha.current;
+  const startD = new Date(cur.start);
+  const endD   = new Date(cur.end);
+  const today  = new Date();
+  const elapsed = Math.max(0, (today - startD) / (endD - startD) * 100);
+  document.getElementById("dashaCurrentBox").innerHTML = `
+    <div>
+      <div style="font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Current Mahadasha</div>
+      <div class="lord-name">${cur.lord}</div>
+    </div>
+    <div class="dasha-dates">
+      <div><i class="fas fa-calendar-alt" style="color:var(--saffron)"></i> ${cur.start} → ${cur.end}</div>
+      <div style="margin-top:.3rem">Moon Nakshatra: <strong>${r.dasha.nakshatra}</strong></div>
+    </div>`;
+  document.getElementById("dashaBarLabel").textContent = `Progress: ${elapsed.toFixed(1)}% elapsed`;
+  document.getElementById("dashaBarFill").style.width = elapsed + "%";
+
+  const ab = document.getElementById("antardashaBody");
+  ab.innerHTML = "";
+  r.antardashas.forEach(a => {
+    const isToday = new Date(a.start) <= today && new Date(a.end) > today;
+    ab.innerHTML += `<tr ${isToday ? 'style="background:rgba(243,200,93,.1)"' : ""}>
+      <td><strong>${a.lord}</strong>${isToday ? ' <span style="color:var(--gold);font-size:.75rem">◀ Current</span>' : ""}</td>
+      <td>${a.start}</td>
+      <td>${a.end}</td>
+    </tr>`;
+  });
+
+  // Yogas
+  const yl = document.getElementById("yogasList");
+  yl.innerHTML = "";
+  r.yogas.forEach(y => {
+    yl.innerHTML += `<li class="yd-item ${y.present ? 'present' : 'absent'}">
+      <div class="yd-item-header">
+        <span class="yd-name">${y.name}</span>
+        <span class="status-pill ${y.present ? 'status-present' : 'status-absent'}">${y.present ? "✓ Present" : "Absent"}</span>
+      </div>
+      <div class="yd-desc">${y.description}</div>
+    </li>`;
+  });
+
+  // Doshas
+  const dl = document.getElementById("doshasList");
+  dl.innerHTML = "";
+  r.doshas.forEach(d => {
+    dl.innerHTML += `<li class="yd-item ${d.present ? 'present' : 'absent'}">
+      <div class="yd-item-header">
+        <span class="yd-name">${d.name}</span>
+        <span class="status-pill ${d.present ? 'status-warn' : 'status-absent'}">${d.present ? "⚠ Present" : "Absent"}</span>
+      </div>
+      <div class="yd-desc">${d.description}</div>
+    </li>`;
+  });
+
+  // Predictions
+  const pg = document.getElementById("predictionsGrid");
+  pg.innerHTML = `
+    <div class="pred-card">
+      <h4><i class="fas fa-briefcase"></i> Career</h4>
+      <p>${r.predictions.career}</p>
+    </div>
+    <div class="pred-card">
+      <h4><i class="fas fa-heart"></i> Marriage</h4>
+      <p>${r.predictions.marriage}</p>
+    </div>
+    <div class="pred-card">
+      <h4><i class="fas fa-heartbeat"></i> Health</h4>
+      <p>${r.predictions.health}</p>
+    </div>
+    <div class="pred-card" style="grid-column:span 1">
+      <h4><i class="fas fa-om"></i> Remedies</h4>
+      <ul class="remedies-list">${r.predictions.remedies.map(rem => `<li>${rem}</li>`).join("")}</ul>
+    </div>`;
+
+  document.getElementById("kundaliResult").classList.add("visible");
+  document.getElementById("kundaliResult").scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+// ── PDF Export ──────────────────────────────────────────────────────────────
+function downloadPDF() {
+  if (!lastResult) { alert("Please generate a Kundali first."); return; }
+  const r   = lastResult;
+  const doc = new window.jspdf.jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
+  const W   = doc.internal.pageSize.getWidth();
+  let y     = 15;
+
+  // Header
+  doc.setFillColor(9, 2, 8);
+  doc.rect(0, 0, W, 25, "F");
+  doc.setTextColor(243, 200, 93);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.text("Kundali Report — Astroserves by Acharya Anuj", W/2, 12, { align:"center" });
+  doc.setFontSize(10);
+  doc.setTextColor(215, 195, 163);
+  doc.text(`Name: ${r.birthData.name}   |   DOB: ${r.birthData.date}   |   TOB: ${r.birthData.time}   |   TZ: UTC+${r.birthData.timezone}`, W/2, 20, { align:"center" });
+  y = 32;
+
+  // Lagna
+  doc.setTextColor(243, 200, 93);
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Lagna: ${r.lagna.rashiName}  |  Moon Nakshatra: ${r.dasha.nakshatra}  |  Ayanamsa: ${r.ayanamsa.toFixed(4)}°`, 14, y);
+  y += 8;
+
+  // Planets table
+  doc.setFontSize(12);
+  doc.setTextColor(243, 200, 93);
+  doc.text("Planetary Positions", 14, y);
+  y += 5;
+
+  const headers = [["Planet","Rashi","Degree","House","Nakshatra","Pada","Status"]];
+  const rows    = r.planets.map(p => [p.name, p.rashiName, p.degree.toFixed(2)+"°", p.house, p.nakshatra, p.pada, p.status]);
+
+  if (doc.autoTable) {
+    doc.autoTable({
+      startY: y,
+      head: headers,
+      body: rows,
+      theme: "grid",
+      headStyles: { fillColor:[40,15,35], textColor:[243,200,93], fontStyle:"bold" },
+      bodyStyles: { textColor:[247,241,231], fillColor:[20,8,16] },
+      alternateRowStyles: { fillColor:[28,10,22] },
+      margin:{ left:14, right:14 },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  } else {
+    rows.forEach(row => {
+      doc.setFontSize(9);
+      doc.setTextColor(247,241,231);
+      doc.text(row.join("  |  "), 14, y);
+      y += 5;
+    });
+    y += 4;
+  }
+
+  // Dasha
+  if (y > 240) { doc.addPage(); y = 15; }
+  doc.setFontSize(12);
+  doc.setTextColor(243,200,93);
+  doc.setFont("helvetica","bold");
+  doc.text("Vimshottari Dasha", 14, y);
+  y += 5;
+  doc.setFontSize(10);
+  doc.setTextColor(247,241,231);
+  const cur = r.dasha.current;
+  doc.text(`Current Mahadasha: ${cur.lord}   (${cur.start} — ${cur.end})`, 14, y);
+  y += 5;
+
+  // Antardasha
+  doc.setFontSize(10);
+  doc.setTextColor(215,195,163);
+  doc.text("Antardashas:", 14, y);
+  y += 4;
+  const today = new Date();
+  r.antardashas.forEach(a => {
+    const isCurrent = new Date(a.start) <= today && new Date(a.end) > today;
+    doc.setTextColor(isCurrent ? [243,200,93] : [247,241,231]);
+    doc.setFont("helvetica", isCurrent ? "bold" : "normal");
+    doc.setFontSize(9);
+    doc.text(`${a.lord}:  ${a.start}  →  ${a.end}${isCurrent ? "  ← Current" : ""}`, 18, y);
+    y += 5;
+    if (y > 270) { doc.addPage(); y = 15; }
+  });
+  y += 4;
+
+  // Yogas
+  if (y > 240) { doc.addPage(); y = 15; }
+  doc.setFontSize(12);
+  doc.setTextColor(243,200,93);
+  doc.setFont("helvetica","bold");
+  doc.text("Yogas", 14, y);
+  y += 5;
+  r.yogas.forEach(yg => {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", yg.present ? "bold" : "normal");
+    doc.setTextColor(yg.present ? [93,220,134] : [180,160,140]);
+    doc.text(`${yg.present ? "✓" : "✗"} ${yg.name}: ${yg.description}`, 14, y);
+    y += 5;
+    if (y > 270) { doc.addPage(); y = 15; }
+  });
+  y += 4;
+
+  // Doshas
+  if (y > 240) { doc.addPage(); y = 15; }
+  doc.setFontSize(12);
+  doc.setTextColor(243,200,93);
+  doc.setFont("helvetica","bold");
+  doc.text("Doshas", 14, y);
+  y += 5;
+  r.doshas.forEach(d => {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", d.present ? "bold" : "normal");
+    doc.setTextColor(d.present ? [255,180,50] : [180,160,140]);
+    doc.text(`${d.present ? "⚠" : "✗"} ${d.name}: ${d.description}`, 14, y);
+    y += 5;
+    if (y > 270) { doc.addPage(); y = 15; }
+  });
+  y += 4;
+
+  // Footer
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(120,100,90);
+    doc.text(`Astroserves by Acharya Anuj — Generated ${new Date().toLocaleDateString()}  |  Page ${i}/${pageCount}`, W/2, 290, { align:"center" });
+  }
+
+  doc.save(`Kundali-${r.birthData.name.replace(/\s+/g,"-")}.pdf`);
+}
+</script>
+</body>
+</html>
