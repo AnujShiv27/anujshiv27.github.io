@@ -81,76 +81,12 @@
     .chart-wrap { text-align:center; }
     .chart-wrap h3 { color:var(--gold); font-size:1rem; margin-bottom:.75rem; font-family:"Playfair Display",serif; }
 
-    /* ── North Indian 12-Box Chart ── */
-    .ni-chart {
-      display: grid;
-      grid-template-rows: repeat(4, 1fr);
-      border: 1.5px solid rgba(243,200,93,0.35);
-      border-radius: 8px;
-      overflow: hidden;
-      background: #090208;
-      aspect-ratio: 1;
-      max-width: 340px;
+    /* ── North Indian Diamond Chart (SVG) ── */
+    .ni-svg-chart {
+      max-width: 360px;
+      width: 100%;
       margin: 0 auto;
-    }
-    .ni-row {
-      display: grid;
-      grid-template-columns: 1fr 2fr 1fr;
-    }
-    .ni-row:first-child,
-    .ni-row:last-child {
-      grid-template-columns: 1fr 1fr 1fr 1fr;
-    }
-    .ni-box {
-      border: 1px solid rgba(243,200,93,0.25);
-      padding: 4px 5px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 72px;
-      position: relative;
-      background: rgba(255,247,229,0.02);
-    }
-    .ni-box.ni-lagna {
-      background: rgba(243,200,93,0.07);
-    }
-    .ni-center {
-      border: 1px solid rgba(243,200,93,0.15);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255,255,255,0.01);
-    }
-    .ni-center-text {
-      font-size: 1.8rem;
-      color: rgba(243,200,93,0.2);
-      line-height: 1;
-    }
-    .ni-hnum {
-      font-size: 0.65rem;
-      color: rgba(215,195,163,0.4);
-      font-weight: 600;
-      align-self: flex-start;
-      line-height: 1;
-    }
-    .ni-lg {
-      font-size: 0.6rem;
-      color: rgba(243,200,93,0.7);
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
-    .ni-planets {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #f3c85d;
-      text-align: center;
-      line-height: 1.5;
-      margin-top: 2px;
-    }
-    @media(max-width:480px){
-      .ni-box { min-height: 56px; padding: 3px; }
-      .ni-planets { font-size: 0.65rem; }
+      display: block;
     }
 
     /* ── Table ── */
@@ -466,17 +402,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="kundali-engine.js"></script>
 <script>
-// ── North Indian 12-Box Chart (Simple Grid Layout) ───────────────────────────
-// Standard North Indian layout:
-// +----+----+----+----+
-// | 12 |  1 |  2 |  3 |
-// +----+----+----+----+
-// | 11 |         |  4 |
-// +----+  CENTER +----+
-// | 10 |         |  5 |
-// +----+----+----+----+
-// |  9 |  8 |  7 |  6 |
-// +----+----+----+----+
+// ── North Indian Diamond Chart (SVG) ─────────────────────────────────────────
+// Traditional diamond layout: H1 at top, 12 cells as polygons.
 
 function buildNIChart(planets, lagnaRashi, navamsa) {
   // House → planets map
@@ -488,44 +415,56 @@ function buildNIChart(planets, lagnaRashi, navamsa) {
     houseMap[h].push(p.abbr);
   });
 
-  const RASHI_NAMES_SHORT = ["Me","Vr","Mi","Ka","Si","Ka","Tu","Vr","Dh","Ma","Ku","Me"];
+  const RASHI_SHORT = ["Me","Vr","Mi","Ka","Si","Ka","Tu","Vr","Dh","Ma","Ku","Me"];
 
-  // Build each box as HTML div
-  function box(h, extraClass) {
-    const planetsHere = houseMap[h] || [];
+  // SVG polygon points and text centroids for each house (1-indexed)
+  const CELLS = [
+    null, // index 0 unused
+    { pts:"0,0 480,0 240,120",           cx:240, cy:55  }, // H1  top large
+    { pts:"480,0 240,120 360,240",        cx:390, cy:120 }, // H2  top-right small
+    { pts:"480,0 480,480 360,240",        cx:425, cy:240 }, // H3  right large
+    { pts:"480,480 360,240 240,360",      cx:390, cy:360 }, // H4  bottom-right small
+    { pts:"480,480 0,480 240,360",        cx:240, cy:425 }, // H5  bottom large
+    { pts:"0,480 240,360 120,240",        cx:90,  cy:360 }, // H6  bottom-left small
+    { pts:"0,480 0,0 120,240",           cx:55,  cy:240 }, // H7  left large
+    { pts:"0,0 120,240 240,120",         cx:90,  cy:120 }, // H8  top-left small
+    { pts:"240,120 120,240 240,240",      cx:175, cy:205 }, // H9  inner top-left
+    { pts:"240,120 360,240 240,240",      cx:305, cy:205 }, // H10 inner top-right
+    { pts:"360,240 240,360 240,240",      cx:305, cy:305 }, // H11 inner bottom-right
+    { pts:"240,360 120,240 240,240",      cx:175, cy:305 }, // H12 inner bottom-left
+  ];
+
+  let polygons = "";
+  for (let h = 1; h <= 12; h++) {
+    const cell = CELLS[h];
     const isLagna = h === 1;
+    const fill = isLagna ? "rgba(243,200,93,0.08)" : "rgba(255,255,255,0.02)";
     const rashiIdx = (lagnaRashi + h - 1) % 12;
-    const rashiName = RASHI_NAMES_SHORT[rashiIdx];
-    return `
-      <div class="ni-box ${isLagna ? 'ni-lagna' : ''} ${extraClass||''}">
-        <div class="ni-hnum">${h}</div>
-        ${isLagna ? '<div class="ni-lg">Lg</div>' : ''}
-        <div class="ni-planets">${planetsHere.join(' ')}</div>
-      </div>`;
+    const rashiName = RASHI_SHORT[rashiIdx];
+    const planetsHere = houseMap[h] || [];
+
+    // House number — small, muted, offset from centroid upward
+    const hnumY = cell.cy - 22;
+    const lgY   = cell.cy - 11;
+    // Rashi name — small, below house number
+    const rashiY = cell.cy - 3;
+    // Planets stacked: start at cy+10, each line 13px
+    let planetLines = "";
+    planetsHere.forEach((abbr, idx) => {
+      planetLines += `<text x="${cell.cx}" y="${cell.cy + 11 + idx * 13}" text-anchor="middle" font-family="Montserrat,sans-serif" font-size="13" font-weight="700" fill="#f3c85d">${abbr}</text>`;
+    });
+
+    polygons += `
+      <polygon points="${cell.pts}" fill="${fill}" stroke="rgba(243,200,93,0.4)" stroke-width="1.5"/>
+      <text x="${cell.cx}" y="${hnumY}" text-anchor="middle" font-family="Montserrat,sans-serif" font-size="10" fill="rgba(215,195,163,0.45)">${h}</text>
+      ${isLagna ? `<text x="${cell.cx}" y="${lgY}" text-anchor="middle" font-family="Montserrat,sans-serif" font-size="9" font-weight="700" fill="rgba(243,200,93,0.75)">Lg</text>` : ""}
+      <text x="${cell.cx}" y="${rashiY}" text-anchor="middle" font-family="Montserrat,sans-serif" font-size="9" fill="rgba(215,195,163,0.45)">${rashiName}</text>
+      ${planetLines}`;
   }
 
-  return `
-    <div class="ni-chart">
-      <div class="ni-row">
-        ${box(12)} ${box(1)} ${box(2)} ${box(3)}
-      </div>
-      <div class="ni-row">
-        ${box(11)}
-        <div class="ni-center">
-          <div class="ni-center-text">ॐ</div>
-        </div>
-        ${box(4)}
-      </div>
-      <div class="ni-row">
-        ${box(10)}
-        <div class="ni-center">
-        </div>
-        ${box(5)}
-      </div>
-      <div class="ni-row">
-        ${box(9)} ${box(8)} ${box(7)} ${box(6)}
-      </div>
-    </div>`;
+  return `<svg class="ni-svg-chart" viewBox="0 0 480 480" xmlns="http://www.w3.org/2000/svg" style="background:#090208;border-radius:6px">
+    ${polygons}
+  </svg>`;
 }
 
 // ── Main Kundali Generator ─────────────────────────────────────────────────
